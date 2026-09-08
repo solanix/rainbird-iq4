@@ -137,6 +137,21 @@ class RainBirdIQ4Data:
     runtime_assignments: list[StationRuntime]
     effective_programs: list[dict[str, Any]]
 
+    @property
+    def enabled_stations(self) -> list[Station]:
+        """Return stations verified enabled by the cloud station list."""
+        return [station for station in self.stations if station.is_enabled is True]
+
+    @property
+    def disabled_stations(self) -> list[Station]:
+        """Return stations verified disabled by the cloud station list."""
+        return [station for station in self.stations if station.is_enabled is False]
+
+    @property
+    def unknown_state_stations(self) -> list[Station]:
+        """Return stations without a verified enabled state."""
+        return [station for station in self.stations if station.is_enabled is None]
+
 
 AUTH_BACKOFF_INITIAL_SECONDS = 5 * 60
 AUTH_BACKOFF_MAX_SECONDS = 60 * 60

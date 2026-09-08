@@ -101,10 +101,10 @@ def test_device_identifiers_are_stable():
 def _make_entity_coordinator():
     controller = _make_controller()
     stations = [
-        Station(101, controller.id, "Front lawn", 1),
-        Station(102, controller.id, "Station 002", 2),
-        Station(103, controller.id, "Station 003", 3),
-        Station(110, controller.id, "Back beds", 10),
+        Station(101, controller.id, "Front lawn", 1, True),
+        Station(102, controller.id, "Station 002", 2, True),
+        Station(103, controller.id, "Station 003", 3, True),
+        Station(110, controller.id, "Back beds", 10, True),
     ]
     scheduled_programs = [
         ScheduledProgram(4000001, "Program A", (ScheduledTime(time(5), 0),)),
@@ -240,6 +240,7 @@ def test_station_program_runtime_is_not_summed_across_programs() -> None:
         "site_name": "Family",
         "station_id": 101,
         "station_name": "Front lawn",
+        "station_enabled": True,
         "terminal": 1,
         "terminal_number": 1,
         "program_id": 4000001,
@@ -250,6 +251,54 @@ def test_station_program_runtime_is_not_summed_across_programs() -> None:
         "effective": True,
         "scheduled": True,
     }
+
+
+def test_disabled_station_is_retained_and_recovers_with_stable_identity() -> None:
+    """A disabled station remains registered and recovers in place when enabled."""
+    coordinator = _make_entity_coordinator()
+    coordinator.data.stations[0] = Station(101, 42, "Front lawn", 1, False)
+    station = coordinator.data.stations[0]
+    metadata = StationSensor(coordinator, station)
+    runtime = StationProgramRuntimeSensor(coordinator, station, 4000001)
+    entities = _build_entities(coordinator)
+    metadata_unique_id = metadata.unique_id
+    runtime_unique_id = runtime.unique_id
+
+    assert metadata._attr_entity_registry_enabled_default is False
+    assert runtime._attr_entity_registry_enabled_default is False
+    assert metadata.extra_state_attributes["station_enabled"] is False
+    assert metadata.unique_id in {entity.unique_id for entity in entities}
+    assert runtime.unique_id in {entity.unique_id for entity in entities}
+
+    coordinator.data.stations[0] = Station(101, 42, "Front lawn", 1, True)
+
+    assert metadata.available is True
+    assert runtime.available is True
+    assert metadata.extra_state_attributes["station_enabled"] is True
+    assert runtime.extra_state_attributes["station_enabled"] is True
+    assert metadata.unique_id == metadata_unique_id
+    assert runtime.unique_id == runtime_unique_id
+
+
+def test_cloud_snapshot_preserves_all_station_state_catalogs() -> None:
+    """All stations remain internal while normalized catalogs separate their states."""
+    coordinator = _make_entity_coordinator()
+    coordinator.data.stations = [
+        Station(100 + terminal, 42, f"Cloud {terminal}", terminal, terminal <= 7)
+        for terminal in range(1, 11)
+    ] + [Station(111, 42, "Unknown", 11)]
+
+    assert [station.terminal for station in coordinator.data.enabled_stations] == list(range(1, 8))
+    assert [station.terminal for station in coordinator.data.disabled_stations] == [8, 9, 10]
+    assert [station.terminal for station in coordinator.data.unknown_state_stations] == [11]
+    assert len(coordinator.data.stations) == 11
+
+
+def test_available_terminals_remain_physical_capacity() -> None:
+    """Local capacity remains independent from cloud enabled station state."""
+    state = replace(_local_state(), available_terminals=tuple(range(1, 11)))
+
+    assert state.available_terminals == tuple(range(1, 11))
 
 
 def test_program_c_runtime_reference_is_retained_without_schedule_promotion() -> None:
@@ -295,6 +344,7 @@ def test_effective_program_entities_expose_schedule_and_station_runtimes() -> No
         {
             "station_id": 101,
             "station_name": "Front lawn",
+            "station_enabled": True,
             "terminal": 1,
             "terminal_number": 1,
             "adjusted_runtime": "00:10:00",

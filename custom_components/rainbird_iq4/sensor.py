@@ -269,6 +269,7 @@ class ActiveStationSensor(RainBirdIQ4LocalEntity, SensorEntity):
         attributes["terminal_number"] = terminal
         attributes["station_id"] = station.id if station else None
         attributes["station_name"] = station.name if station else None
+        attributes["station_enabled"] = station.is_enabled if station else None
         return attributes
 
 
@@ -451,6 +452,7 @@ class StationSensor(RainBirdIQ4Entity, SensorEntity):
         super().__init__(coordinator, f"station_{station.id}")
         self._station_id = station.id
         self._station_name = station.name
+        self._attr_entity_registry_enabled_default = station.is_enabled is not False
         self._attr_name = f"{station.name} metadata"
 
     @property
@@ -541,6 +543,7 @@ class StationSensor(RainBirdIQ4Entity, SensorEntity):
             {
                 "station_id": self._station_id,
                 "station_name": station.name if station is not None else None,
+                "station_enabled": station.is_enabled if station is not None else None,
                 "terminal": station.terminal if station is not None else None,
                 "terminal_number": station.terminal if station is not None else None,
                 "assigned_effective_programs": self._effective_assignment_attributes,
@@ -592,6 +595,7 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
         )
         self._attr_name = f"{station_name} {program_name} runtime"
         self._station_name = station.name
+        self._attr_entity_registry_enabled_default = station.is_enabled is not False
         self._runtime_name_suffix = f"{program_name} runtime"
         self._terminal = station.terminal
 
@@ -673,6 +677,7 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
             {
                 "station_id": self._station_id,
                 "station_name": station.name if station is not None else self._station_name,
+                "station_enabled": station.is_enabled if station is not None else None,
                 "terminal": station.terminal if station is not None else self._terminal,
                 "terminal_number": station.terminal if station is not None else self._terminal,
             }
@@ -730,12 +735,15 @@ class ProgramSensor(RainBirdIQ4Entity, SensorEntity):
         station_runtimes = []
         for runtime in self.coordinator.data.runtime_assignments:
             station = station_by_id.get(runtime.station_id)
+            if station is None or station.is_enabled is not True:
+                continue
             for assignment in runtime.assignments:
                 if assignment.program_id == self._program_id:
                     station_runtimes.append(
                         {
                             "station_id": runtime.station_id,
                             "station_name": station.name if station else "",
+                            "station_enabled": station.is_enabled if station else None,
                             "terminal": station.terminal if station else None,
                             "terminal_number": station.terminal if station else None,
                             "adjusted_runtime": assignment.adjusted_run_time,
