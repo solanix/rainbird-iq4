@@ -1,0 +1,43 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Rain Bird IQ4",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "select_controller": {
+        "title": "Select controller",
+        "data": {
+          "controller_id": "Controller"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Authentication failed",
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Controller already configured",
+      "no_controllers": "No IQ4 controllers were found for this account"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Local realtime polling",
+        "description": "Optional read-only local polling. Use the controller-local PIN, not the IQ4 cloud password.",
+        "data": {
+          "local_host": "Controller IP address or hostname",
+          "local_password": "Controller-local PIN"
+        }
+      }
+    },
+    "error": {
+      "local_credentials_required": "Enter both a local controller host and controller-local PIN"
+    }
+  }
+}

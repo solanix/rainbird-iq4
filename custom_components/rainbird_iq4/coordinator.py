@@ -1,0 +1,479 @@
+"""Coordinator for the Rain Bird IQ4 integration."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from asyncio import gather
+from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from time import monotonic
+from typing import Any
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from pyrainbird.exceptions import (  # type: ignore[import-untyped]
+    RainbirdApiException,
+    RainbirdConnectionError,
+)
+from pyrainbird_iq4.cloud.auth import authenticate
+from pyrainbird_iq4.cloud.client import RainBirdIQ4CloudClient
+from pyrainbird_iq4.cloud.models import (
+    ConnectionStatus,
+    Controller,
+    Program,
+    ScheduledProgram,
+    Station,
+    StationRuntime,
+)
+from pyrainbird_iq4.exceptions import (
+    RainBirdIQ4AuthenticationError,
+    RainBirdIQ4ConnectionError,
+    RainBirdIQ4CredentialsError,
+    RainBirdIQ4Error,
+    RainBirdIQ4WAFChallengeError,
+)
+from pyrainbird_iq4.local import (
+    LocalIrrigationState,
+    LocalRunState,
+    RainBirdIQ4LocalClient,
+)
+
+from .const import (
+    CONF_CONTROLLER_ID,
+    CONF_LOCAL_HOST,
+    CONF_LOCAL_PASSWORD,
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    DISCOVERY_STALE_SECONDS,
+    DOMAIN,
+    LOCAL_FAILURE_BACKOFF_INTERVALS,
+    LOCAL_IDLE_UPDATE_INTERVAL,
+    LOCAL_RUNNING_UPDATE_INTERVAL,
+    LOCAL_SLOW_UPDATE_INTERVAL,
+    UPDATE_INTERVAL,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def _observed_scheduled_program_number(name: str) -> int | None:
+    """Map only scheduled program labels confirmed by local protocol evidence."""
+    normalized = name.strip().casefold()
+    return {"a": 1, "program a": 1, "b": 2, "program b": 2}.get(normalized)
+
+
+def _is_stale(connection_status: Any | None, *, now: datetime | None = None) -> bool:
+    """Return whether a controller is stale based on the connection timestamp."""
+    if connection_status is None:
+        return True
+    if not connection_status.timestamp:
+        return True
+    try:
+        timestamp = datetime.fromisoformat(connection_status.timestamp.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return True
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=UTC)
+    return ((now or datetime.now(UTC)) - timestamp).total_seconds() > DISCOVERY_STALE_SECONDS
+
+
+def build_effective_programs(
+    programs: Iterable[Any],
+    scheduled_programs: Iterable[Any],
+) -> list[dict[str, Any]]:
+    """Build effective programs while respecting MQTT-derived schedules."""
+    direct = list(programs)
+    if direct:
+        return [
+            {
+                "source": "direct",
+                "id": program.id,
+                "name": program.name,
+                "short_name": program.short_name,
+                "protocol_program_number": program.number,
+            }
+            for program in direct
+        ]
+
+    effective: list[dict[str, Any]] = []
+    for item in scheduled_programs:
+        if getattr(item, "program_name", None):
+            effective.append(
+                {
+                    "source": "scheduled",
+                    "id": item.program_id,
+                    "name": item.program_name,
+                    "protocol_program_number": _observed_scheduled_program_number(
+                        item.program_name
+                    ),
+                    "scheduled_times": [
+                        {
+                            "time_of_day": start.time_of_day.isoformat(),
+                            "start_time_index": start.start_time_index,
+                        }
+                        for start in item.scheduled_times
+                    ],
+                }
+            )
+    return effective
+
+
+@dataclass(slots=True)
+class RainBirdIQ4Data:
+    """A complete read-only snapshot for one controller."""
+
+    controller: Controller
+    connected: bool
+    connection_status: ConnectionStatus | None
+    stale: bool
+    stations: list[Station]
+    programs: list[Program]
+    scheduled_programs: list[ScheduledProgram]
+    runtime_assignments: list[StationRuntime]
+    effective_programs: list[dict[str, Any]]
+
+
+AUTH_BACKOFF_INITIAL_SECONDS = 5 * 60
+AUTH_BACKOFF_MAX_SECONDS = 60 * 60
+
+
+class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
+    """Coordinate refreshes for the selected controller."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        self.entry = entry
+        self.controller_id = entry.data[CONF_CONTROLLER_ID]
+        self._client: RainBirdIQ4CloudClient | None = None
+        self._session = async_get_clientsession(hass)
+        self._auth_retry_at: float = 0.0
+        self._auth_failure_count: int = 0
+        super().__init__(
+            hass,
+            _LOGGER,
+            config_entry=entry,
+            name=f"{DOMAIN}_{self.controller_id}",
+            update_interval=UPDATE_INTERVAL,
+        )
+
+    def _record_auth_backoff(self) -> int:
+        """Record an authentication transport failure and return its delay."""
+        delay: int = min(
+            AUTH_BACKOFF_INITIAL_SECONDS * 2**self._auth_failure_count,
+            AUTH_BACKOFF_MAX_SECONDS,
+        )
+        self._auth_failure_count += 1
+        self._auth_retry_at = monotonic() + delay
+        return delay
+
+    async def _async_get_client(self) -> RainBirdIQ4CloudClient:
+        """Return the cached API client, authenticating only when required."""
+        if self._client is not None:
+            return self._client
+
+        if (remaining := self._auth_retry_at - monotonic()) > 0:
+            raise UpdateFailed(
+                "IQ4 authentication is temporarily backed off; "
+                f"retry available in {int(remaining)} seconds"
+            )
+
+        try:
+            token = await authenticate(
+                self.entry.data[CONF_USERNAME],
+                self.entry.data[CONF_PASSWORD],
+            )
+        except RainBirdIQ4CredentialsError as err:
+            raise ConfigEntryAuthFailed from err
+        except (
+            RainBirdIQ4WAFChallengeError,
+            RainBirdIQ4AuthenticationError,
+            RainBirdIQ4ConnectionError,
+        ) as err:
+            delay = self._record_auth_backoff()
+            raise UpdateFailed(f"{err}; authentication retry delayed by {delay} seconds") from err
+
+        self._auth_failure_count = 0
+        self._auth_retry_at = 0.0
+        self._client = RainBirdIQ4CloudClient(token, session=self._session)
+        return self._client
+
+    async def _async_fetch_data(self, client: RainBirdIQ4CloudClient) -> RainBirdIQ4Data:
+        """Fetch one complete controller snapshot with an authenticated client."""
+        controllers = await client.get_controllers()
+        controller = next(
+            (item for item in controllers if item.id == self.controller_id),
+            None,
+        )
+        if controller is None:
+            raise UpdateFailed(f"Controller {self.controller_id} is no longer available")
+
+        connection_statuses = await client.get_connection_statuses([self.controller_id])
+        connection_status = connection_statuses[0] if connection_statuses else None
+        stations, programs, scheduled_programs, station_runtimes = await gather(
+            client.get_stations(self.controller_id),
+            client.get_programs(self.controller_id),
+            client.get_scheduled_start_times(self.controller_id),
+            client.get_station_runtimes(self.controller_id),
+        )
+
+        return RainBirdIQ4Data(
+            controller=controller,
+            connected=bool(connection_status and connection_status.is_connected),
+            connection_status=connection_status,
+            stale=_is_stale(connection_status),
+            stations=stations,
+            programs=programs,
+            scheduled_programs=scheduled_programs,
+            runtime_assignments=station_runtimes,
+            effective_programs=build_effective_programs(programs, scheduled_programs),
+        )
+
+    @property
+    def local_configured(self) -> bool:
+        """Return whether both optional local connection fields are configured."""
+        options = getattr(self.entry, "options", {})
+        return bool(options.get(CONF_LOCAL_HOST) and options.get(CONF_LOCAL_PASSWORD))
+
+    async def _async_fetch_cloud(self) -> RainBirdIQ4Data:
+        """Fetch cloud data, refreshing authentication once after an API 401."""
+        client = await self._async_get_client()
+        try:
+            return await self._async_fetch_data(client)
+        except RainBirdIQ4AuthenticationError:
+            self._client = None
+
+        client = await self._async_get_client()
+        try:
+            return await self._async_fetch_data(client)
+        except RainBirdIQ4AuthenticationError as err:
+            self._client = None
+            raise UpdateFailed("IQ4 API rejected a newly refreshed access token") from err
+
+    async def _async_update_data(self) -> RainBirdIQ4Data:
+        """Refresh cloud configuration without touching local realtime state."""
+        try:
+            return await self._async_fetch_cloud()
+        except (RainBirdIQ4ConnectionError, RainBirdIQ4Error, UpdateFailed) as err:
+            raise UpdateFailed(str(err)) from err
+
+
+class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
+    """Poll local realtime state independently from IQ4 cloud data."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        connection: RainBirdIQ4LocalConnection | None = None,
+    ) -> None:
+        self.entry = entry
+        self.controller_id = entry.data[CONF_CONTROLLER_ID]
+        self._session = async_get_clientsession(hass)
+        self._connection = connection or RainBirdIQ4LocalConnection(hass, entry)
+        self._refresh_lock = asyncio.Lock()
+        self.consecutive_failures = 0
+        self.last_successful_update: datetime | None = None
+        super().__init__(
+            hass,
+            _LOGGER,
+            config_entry=entry,
+            name=f"{DOMAIN}_{self.controller_id}_local",
+            update_interval=LOCAL_IDLE_UPDATE_INTERVAL,
+        )
+
+    async def _async_update_data(self) -> LocalIrrigationState:
+        """Fetch one local snapshot without invoking any cloud operation."""
+        async with self._refresh_lock:
+            return await self._async_fetch_local()
+
+    async def _async_fetch_local(self) -> LocalIrrigationState:
+        """Fetch a partial realtime snapshot without touching slow local data."""
+        try:
+            state = await self._connection.async_get_realtime_state()
+        except (RainbirdApiException, RainbirdConnectionError) as err:
+            interval = self._record_local_failure()
+            _LOGGER.debug(
+                "Local IQ4 poll failed for controller %s: %s",
+                self.controller_id,
+                type(err).__name__,
+            )
+            _LOGGER.debug("Local IQ4 session reset for controller %s", self.controller_id)
+            _LOGGER.debug(
+                "Local IQ4 next retry for controller %s in %s seconds",
+                self.controller_id,
+                int(interval.total_seconds()),
+            )
+            raise UpdateFailed(f"Local IQ4 realtime update failed: {type(err).__name__}") from err
+        except Exception as err:
+            interval = self._record_local_failure()
+            _LOGGER.debug(
+                "Local IQ4 poll failed for controller %s: %s",
+                self.controller_id,
+                type(err).__name__,
+            )
+            _LOGGER.debug("Local IQ4 session reset for controller %s", self.controller_id)
+            _LOGGER.debug(
+                "Local IQ4 next retry for controller %s in %s seconds",
+                self.controller_id,
+                int(interval.total_seconds()),
+            )
+            raise UpdateFailed(f"Local IQ4 realtime update failed: {type(err).__name__}") from err
+        if state.transport_failure:
+            interval = self._record_local_failure()
+            _LOGGER.debug(
+                "Local IQ4 realtime poll partial for controller %s; session reset; "
+                "next retry in %s seconds",
+                self.controller_id,
+                int(interval.total_seconds()),
+            )
+        else:
+            self.consecutive_failures = 0
+            interval = (
+                LOCAL_RUNNING_UPDATE_INTERVAL
+                if state.state is LocalRunState.RUNNING
+                else LOCAL_IDLE_UPDATE_INTERVAL
+            )
+            self.update_interval = interval
+            _LOGGER.debug(
+                "Local IQ4 poll succeeded for controller %s; next poll in %s seconds",
+                self.controller_id,
+                int(interval.total_seconds()),
+            )
+        self.last_successful_update = datetime.now(UTC)
+        return state
+
+    def _record_local_failure(self) -> timedelta:
+        """Advance bounded local backoff and update the polling interval."""
+        self.consecutive_failures += 1
+        index = min(
+            self.consecutive_failures - 1,
+            len(LOCAL_FAILURE_BACKOFF_INTERVALS) - 1,
+        )
+        interval = LOCAL_FAILURE_BACKOFF_INTERVALS[index]
+        self.update_interval = interval
+        return interval
+
+
+class RainBirdIQ4LocalConnection:
+    """Share one serialized local client across realtime and slow polling."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        self._entry = entry
+        self._session = async_get_clientsession(hass)
+        self._client: RainBirdIQ4LocalClient | None = None
+        self._lock = asyncio.Lock()
+        self._operation_lock = asyncio.Lock()
+
+    async def async_get_client(self) -> RainBirdIQ4LocalClient:
+        """Return the shared client, connecting once when needed."""
+        async with self._lock:
+            if self._client is None:
+                self._client = await RainBirdIQ4LocalClient.connect(
+                    self._session,
+                    self._entry.options[CONF_LOCAL_HOST],
+                    self._entry.options[CONF_LOCAL_PASSWORD],
+                    controller_id=self._entry.data[CONF_CONTROLLER_ID],
+                )
+            return self._client
+
+    async def async_reset(self, client: RainBirdIQ4LocalClient | None = None) -> None:
+        """Discard a failed client without closing HA's shared HTTP session."""
+        async with self._lock:
+            if client is None or self._client is client:
+                if self._client is not None:
+                    _LOGGER.debug(
+                        "Local IQ4 client controller=%s status=discarded",
+                        self._entry.data[CONF_CONTROLLER_ID],
+                    )
+                self._client = None
+
+    async def async_get_realtime_state(self) -> LocalIrrigationState:
+        """Run one realtime snapshot exclusively and reset failed transports."""
+        async with self._operation_lock:
+            client = await self.async_get_client()
+            try:
+                state = await client.get_realtime_state()
+            except Exception:
+                await self.async_reset(client)
+                raise
+            if state.transport_failure:
+                await self.async_reset(client)
+            return state
+
+    async def async_get_slow_state(self) -> LocalIrrigationState:
+        """Run one slow snapshot exclusively and reset failed transports."""
+        async with self._operation_lock:
+            client = await self.async_get_client()
+            try:
+                state = await client.get_slow_state()
+            except Exception:
+                await self.async_reset(client)
+                raise
+            if state.transport_failure:
+                await self.async_reset(client)
+            return state
+
+
+class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
+    """Poll low-frequency local configuration and rain values independently."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        connection: RainBirdIQ4LocalConnection,
+    ) -> None:
+        self.entry = entry
+        self.controller_id = entry.data[CONF_CONTROLLER_ID]
+        self._connection = connection
+        self.last_successful_update: datetime | None = None
+        self.consecutive_failures = 0
+        super().__init__(
+            hass,
+            _LOGGER,
+            config_entry=entry,
+            name=f"{DOMAIN}_{self.controller_id}_local_slow",
+            update_interval=LOCAL_SLOW_UPDATE_INTERVAL,
+        )
+
+    async def _async_update_data(self) -> LocalIrrigationState:
+        """Fetch slow fields, retaining prior values for failed commands."""
+        try:
+            state = await self._connection.async_get_slow_state()
+        except Exception as err:
+            self.consecutive_failures += 1
+            raise UpdateFailed(f"Local IQ4 slow update failed: {type(err).__name__}") from err
+        previous = getattr(self, "data", None)
+        if previous is not None:
+            state = LocalIrrigationState(
+                irrigation_enabled=(
+                    previous.irrigation_enabled
+                    if "irrigation_enabled" in state.failed_commands
+                    else state.irrigation_enabled
+                ),
+                active_terminals=(),
+                available_terminals=(
+                    previous.available_terminals
+                    if "available_terminals" in state.failed_commands
+                    else state.available_terminals
+                ),
+                rain_sensor_active=(
+                    previous.rain_sensor_active
+                    if "rain_sensor" in state.failed_commands
+                    else state.rain_sensor_active
+                ),
+                rain_delay_days=(
+                    previous.rain_delay_days
+                    if "rain_delay" in state.failed_commands
+                    else state.rain_delay_days
+                ),
+                failed_commands=state.failed_commands,
+                transport_failure=state.transport_failure,
+            )
+        self.consecutive_failures = len(state.failed_commands)
+        self.last_successful_update = datetime.now(UTC)
+        return state

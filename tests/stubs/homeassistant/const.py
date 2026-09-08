@@ -1,0 +1,21 @@
+"""Minimal Home Assistant constants used by the Rain Bird IQ4 custom integration."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+CONF_USERNAME = "username"
+CONF_PASSWORD = "password"
+
+
+class Platform(StrEnum):
+    """Platform enum used by custom integrations."""
+
+    BINARY_SENSOR = "binary_sensor"
+    SENSOR = "sensor"
+
+
+class UnitOfTime(StrEnum):
+    """Time units used by sensor entities."""
+
+    SECONDS = "s"
