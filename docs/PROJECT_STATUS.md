@@ -20,7 +20,7 @@
 | Internal HA control boundary | Implemented and offline-tested (inspected) | Corrected on 2026-10-10 to match the safety policy; see discrepancies below |
 | Public HA `start_station`/`stop_irrigation` actions | **Live-validated (2026-10-10)** | Admin-only; registered in `async_setup`; 23 real-HA tests. Idle stop no-op, Station 001 start and stop each verified with exactly one write; disabled Station 008 refused |
 | Manual Program A/B/C start (`0x38`) | Deferred | Command supported, input numbering unverified |
-| Control dashboard | Planned | Status, zone selection, duration, start/stop, programs; mobile/desktop |
+| Control dashboard | Live-tested (desktop) | Picker and duration entities, example script and dashboard; Station 002 start/stop via dashboard verified. Mobile review pending |
 | Published release / upstream submission | Not done | Phase 2A–2C committed locally (no remotes); no release |
 
 ## Current test evidence (re-run 2026-10-10)
@@ -28,8 +28,8 @@
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | **105 passed** | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` `tests/` (HA stubs) | **78 passed** | Passed | Passed | Passed |
-| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **23 passed** | Passed | Passed | Not in mypy scope |
+| `ha-rainbird-iq4` `tests/` (HA stubs) | **79 passed** | Passed | Passed | Passed |
+| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **34 passed** | Passed | Passed | Not in mypy scope |
 
 Baseline before Phase 2C was confirmed exactly as reported: 102 library / 58 integration, all gates clean. Earlier milestones: 73/50, 82/58, 99/58, 102/58.
 
@@ -63,4 +63,4 @@ The repository inspection found the following differences between the documented
 
 ## Immediate next gate
 
-Phase 2C is accepted. Next: Phase 2D dashboard ([roadmap](development/IMPLEMENTATION_ROADMAP.md#phase-2d--dashboardui-next)). Return HA debug logging to info/warning once no longer needed.
+Phase 2C is accepted. In progress: Phase 2D dashboard ([roadmap](development/IMPLEMENTATION_ROADMAP.md#phase-2d--dashboardui-next)). Return HA debug logging to info/warning once no longer needed.

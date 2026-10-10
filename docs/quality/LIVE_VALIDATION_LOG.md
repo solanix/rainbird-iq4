@@ -31,3 +31,29 @@ Follow-up / rollback:   None required. Return debug logging to info/warning
 ```
 
 **Not covered by this session:** non-admin refusal (covered offline by `tests_ha::test_non_admin_is_rejected`), ambiguous-write handling, two-controller targeting.
+
+## 2026-10-10 — Phase 2D dashboard (Start/Stop buttons)
+
+```text
+Date/time + timezone:   2026-10-10, ~02:40–02:45 UTC
+Controller/firmware:    Backyard 200001, firmware 3.11.0
+Operator + safe zone:   Repository owner; Station 002 (terminal 2)
+HA running or stopped:  HA 2026.10.0.dev0 dev runtime running
+Operation:              Dashboard from examples/dashboard.yaml: picker = Station 002, duration = 2 min,
+                        Start (script, with confirmation) then Stop (rainbird_iq4.stop_irrigation)
+```
+
+| Time (UTC) | Event | Evidence |
+|---|---|---|
+| 02:40:17 / 02:40:49 | Start terminal 2 for 2 min, then stop (script run directly, then dashboard Stop) | `operation=start_station terminal=2 duration_minutes=2 outcome=acknowledged`; `operation=stop_irrigation outcome=acknowledged`; no unconfirmed warning |
+| 02:44:50 | Dashboard Start, Station 002, 2 min | `operation=start_station terminal=2 duration_minutes=2 outcome=acknowledged elapsed_ms=222`; dashboard showed State `running`, Active station `Station 002`, Remaining 118 s, Start button hidden |
+| 02:45:01 | Dashboard Stop | `operation=stop_irrigation outcome=acknowledged elapsed_ms=152`; returned to idle; no unconfirmed warning |
+
+```text
+Physical observation:   Operator reported the test looked good
+Any unexpected effects: First Start press failed with "script not found": the UI saved the script with a
+                        generated ID (backyard_start_selected_station); fixed by pointing the dashboard at
+                        that ID and clarifying examples. A 30 s controller connection drop at 02:37 left rain
+                        entities unavailable until the next 5-minute slow poll; slow-poll failure backoff added.
+Follow-up / rollback:   None required
+```

@@ -11,6 +11,10 @@ Reported Backyard entities include:
 - Slow data: irrigation enabled, rain sensor, rain delay, available terminal count/list.
 - Station metadata sensor, e.g. `sensor.backyard_station_001` — numeric state is **effective program count**, not enablement; attributes include `station_enabled`, IDs, terminal, references. The cloud **station ID** needed by `start_station` is shown here.
 - Program and program-start metadata entities; effective program count.
+- Manual-start controls (only when local control is configured):
+  - `select.backyard_start_station` — options are **only** cloud-enabled stations, by IQ4 name (duplicate names get a ` (terminal N)` suffix). Attribute `station_id` holds the stable cloud ID of the choice. The choice is stored by station ID, restored across restarts, and cleared if that station stops being enabled.
+  - `number.backyard_start_duration` — 1–30 minutes, slider, default 5, restored across restarts; stays available during cloud outages.
+  - Changing either never contacts the controller.
 
 Actual exact entity IDs may vary with naming and registry customizations. Confirm with HA Developer Tools → States.
 
@@ -80,7 +84,7 @@ All errors are translated (`strings.json` → `exceptions`). Input problems rais
 - Station identity is the stable cloud station ID, resolved to a terminal at the server boundary; users never supply a terminal number.
 - The device must be owned by the resolved entry **and** carry the identifier `(rainbird_iq4, <controller_id>)`, preventing cross-controller targeting.
 - Prefer explicit variable-duration action over switch-per-station; switch semantics do not cleanly reflect timed external runs.
-- `station_id` is a number box for now; a station picker belongs in the Phase 2D dashboard.
+- `station_id` is a number box in the raw action; dashboards use the `select` entity and the example script in `examples/script.yaml`, which passes the selection to `start_station`. Because a script runs with the caller's context, the admin check still applies to the person pressing Start. Automations have no user and are allowed (standard HA behaviour).
 - Optional controller-level Stop button may follow live validation.
 - Dashboard goal: status, current terminal/program, remaining runtime, enabled station selection, chosen duration, Start/Stop, scheduled program overview; responsive desktop/mobile.
 

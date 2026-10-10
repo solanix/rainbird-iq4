@@ -22,14 +22,18 @@
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | 105 passed | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` stub | 78 passed | Passed | Passed | Passed |
-| `ha-rainbird-iq4` real HA | 23 passed | Passed | Passed | — |
+| `ha-rainbird-iq4` stub | 79 passed | Passed | Passed | Passed |
+| `ha-rainbird-iq4` real HA | 34 passed | Passed | Passed | — |
 
 ## Regression coverage
 
 **Library:** input validation (including Python bool-as-int hazard), 1/30-minute bounds, protocol delegation, upstream error types, auth/network/timeouts/NACK/busy, one-write-only, stop acknowledgement, transport serialization, connection-close behavior, no writes from construction or polling, delayed active-terminal updates, queue-only confirmation, wrong-terminal evidence rejection, bounded start verification failure, **bounded idle verification, incomplete-idle rejection, zero-attempt guard**.
 
 **Integration control boundary (stub suite):** station-ID resolution, cross-controller ID, enabled/unknown guard, duration (0, 31, bool, float), stale/incomplete/busy telemetry, fresh-read busy, rain sensor/delay active and unknown, terminal unavailable/unknown, irrigation disabled, preflight read failure, ambiguous start and stop, unconfirmed start and stop, idle stop no-op, unknown-state stop still sent, connect failure not ambiguous; plus existing entity, metadata and polling coverage.
+
+## Phase 2D coverage
+
+`tests_ha/test_controls.py`: picker offers only enabled stations and selecting sends nothing; duplicate names disambiguated; restore by station ID (kept if enabled, cleared if now disabled); duration default, set and restore; no controls without local; selection drives `start_station`; `examples/script.yaml` starts the selected station, keeps the admin check, and rejects a missing selection visibly. The dashboard YAML is not machine-validated; it needs UI review.
 
 ## Phase 2C traceability
 

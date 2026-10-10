@@ -2,6 +2,14 @@
 
 This is a **reported milestone history**, not a Git commit history. Exact dates for some intermediate milestones were not recorded; all milestones predate or occurred on 2026-10-10.
 
+## 2026-10-10 — Phase 2D started
+
+- Added `select` "Start station" (cloud-enabled stations only, stored by station ID, restored) and `number` "Start duration" (1–30 min, default 5, restored) entities, created only with local control configured. Neither contacts the controller.
+- Added `examples/script.yaml` and `examples/dashboard.yaml`. The script is loaded and run in the real-HA tests (starts the selected station; non-admin refused; no selection rejected visibly).
+- A failed slow poll now retries after 30/60/120 s instead of waiting the full 5 minutes.
+- Dashboard Start/Stop live-tested on desktop with Station 002.
+- Results: library 105; integration stub suite 79; real-HA suite 34.
+
 ## 2026-10-10 — Phase 2C accepted (live)
 
 - Operator-supervised test through HA Developer Tools on controller 200001: idle stop returned `no_op` with nothing sent; Station 001 one-minute start and the following stop each sent exactly one write and verified; disabled Station 008 was refused. Details in [LIVE_VALIDATION_LOG.md](quality/LIVE_VALIDATION_LOG.md).
