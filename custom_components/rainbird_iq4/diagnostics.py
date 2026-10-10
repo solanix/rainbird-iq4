@@ -64,6 +64,8 @@ async def async_get_config_entry_diagnostics(
     """Return redacted diagnostics for one controller entry."""
     runtime = entry.runtime_data
     cloud = _coordinator(runtime.cloud)
+    if cloud is not None:
+        cloud["using_saved_data_since"] = runtime.cloud.cached_since
     if cloud is not None and runtime.cloud.data is not None:
         # IQ4's raw isLocked flag means enabled when true; show the derived value too.
         for station, raw in zip(

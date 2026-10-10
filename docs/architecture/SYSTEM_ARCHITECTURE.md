@@ -60,6 +60,7 @@ flowchart TD
 
 - `async_setup` registers both control actions **once per HA instance**, independent of config entries (HA `action-setup` pattern). They are never unregistered; a call targeting a device whose entry is not loaded is rejected with `entry_not_loaded`.
 - Config-entry setup creates cloud, realtime local and slow local coordinators in `entry.runtime_data`, wires platforms, and starts scheduled updates. Setup and reload perform reads only; tests assert zero writes on setup and reload.
+- If the cloud is unreachable at startup and local control is configured, setup loads the last saved cloud snapshot instead of failing (ADR-014); cloud entities stay unavailable and starts stay blocked until a live cloud refresh succeeds. The snapshot is deleted when the entry is removed.
 - On unload, platforms unload and `runtime_data` is cleared. The local client holds no persistent socket (connection-close over HA's shared session), so there is nothing further to close.
 - Multiple IQ4 config entries are supported: each action call resolves the HA device to exactly one entry and that entry's own connection.
 

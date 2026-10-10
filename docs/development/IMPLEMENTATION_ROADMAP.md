@@ -81,7 +81,6 @@ Quality-scale status per rule: `custom_components/rainbird_iq4/quality_scale.yam
 
 | Priority | Item | Reason |
 |---|---|---|
-| P0 | Set up without cloud (setup-without-cloud) | Cloud first refresh gates the whole entry: an IQ4 cloud/WAF outage at HA startup leaves the entry not loaded, so local `stop_irrigation` is unavailable, contrary to ADR-002 |
 | P0 | Verify disk/Recorder health after restart | Earlier SQLite writes failed |
 | P0 | Preserve exact-once write semantics | Watering commands have physical effects |
 | P1 | Responsive dashboard with station picker | Primary end-user interaction; replaces raw station ID entry |

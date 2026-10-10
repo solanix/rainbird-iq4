@@ -11,7 +11,9 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Added concurrency tests: a start issued mid-poll waits for the poll, and a stop sent while a start is writing runs after it; no deadlock.
 - Fixed entity names now come from `strings.json` (`translation_key`); station and program entities keep their IQ4-derived names. A snapshot of every entity ID and name confirms nothing changed for existing setups or dashboards.
 - **Program entities for unscheduled programs.** A program still assigned to stations but without a start time (live: Program B, Program C) now has an entity reading `Not scheduled` with `effective: false`; it goes unavailable only once it disappears from both the schedule and the station assignments. Previously such programs had no entity after a restart, so Program B showed as an orphaned `unavailable` registry entry. New entity: `sensor.<controller>_program_c`.
-- Results: library 105; integration stub suite 75; real-HA suite 58.
+- **Local stop survives a cloud outage at startup.** The cloud coordinator saves its last good snapshot (HA storage, per entry, no credentials) after each successful refresh. If the first cloud refresh fails at startup and local control is configured, setup loads the snapshot instead of failing: local entities and `stop_irrigation` work, cloud entities and the station picker stay unavailable, `start_station` is refused (`cloud_data_unavailable`), and everything recovers on the next successful cloud refresh. Cloud-only entries and entries without a snapshot still retry; rejected credentials still go to reauthentication. The snapshot is deleted with the entry. See ADR-014.
+- `RainBirdIQ4Data` moved to `models.py` (still importable from `coordinator`).
+- Results: library 105; integration stub suite 75; real-HA suite 66.
 
 ## 2026-10-10 — Phase 2D started
 

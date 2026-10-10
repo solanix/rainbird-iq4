@@ -63,6 +63,7 @@
       'last_successful_update': None,
       'last_update_success': True,
       'update_interval_seconds': 300.0,
+      'using_saved_data_since': None,
     }),
     'entry': dict({
       'data': dict({

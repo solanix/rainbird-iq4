@@ -30,7 +30,7 @@ from custom_components.rainbird_iq4.coordinator import RainBirdIQ4Coordinator
 from .conftest import OTHER_ID, BACKYARD_ID, controller, make_entry, setup_entry
 
 # Captured before the autouse mock replaces it, to exercise the real auth path.
-REAL_CLOUD_UPDATE = RainBirdIQ4Coordinator._async_update_data
+REAL_CLOUD_FETCH = RainBirdIQ4Coordinator._async_fetch_cloud
 
 CREDENTIALS = {CONF_USERNAME: "user", CONF_PASSWORD: "secret"}
 
@@ -221,7 +221,7 @@ async def test_rejected_credentials_start_reauth(hass: HomeAssistant) -> None:
     entry = await setup_entry(hass, make_entry(BACKYARD_ID))
 
     with (
-        patch.object(RainBirdIQ4Coordinator, "_async_update_data", REAL_CLOUD_UPDATE),
+        patch.object(RainBirdIQ4Coordinator, "_async_fetch_cloud", REAL_CLOUD_FETCH),
         patch(
             "custom_components.rainbird_iq4.coordinator.authenticate",
             AsyncMock(side_effect=RainBirdIQ4CredentialsError("rejected")),

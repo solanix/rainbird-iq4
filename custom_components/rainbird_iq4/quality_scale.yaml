@@ -39,9 +39,8 @@ rules:
   test-before-setup:
     status: done
     comment: >-
-      Cloud first refresh raises ConfigEntryNotReady. This also means an IQ4 cloud outage at
-      startup prevents the entry, including local stop, from loading; see setup-without-cloud
-      follow-up in docs/development/IMPLEMENTATION_ROADMAP.md.
+      Cloud first refresh raises ConfigEntryNotReady, except that an entry with local control
+      and a saved cloud snapshot loads from the snapshot so local stop stays available (ADR-014).
   unique-config-entry: done
 
   # Silver

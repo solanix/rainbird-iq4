@@ -166,7 +166,7 @@ def mock_io(clients: dict[str, MagicMock], cloud_available: dict[str, bool]) -> 
 
     with (
         patch(
-            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4Coordinator._async_update_data",
+            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4Coordinator._async_fetch_cloud",
             fetch_cloud,
         ),
         patch(

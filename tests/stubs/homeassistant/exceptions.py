@@ -13,3 +13,7 @@ class ConfigEntryAuthFailed(HomeAssistantError):
 
 class ServiceValidationError(HomeAssistantError):
     """Raised when a service call is invalid."""
+
+
+class ConfigEntryNotReady(HomeAssistantError):
+    """Raised when a config entry is not ready yet."""

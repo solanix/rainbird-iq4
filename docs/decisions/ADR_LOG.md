@@ -60,6 +60,11 @@
 **Decision:** Immediately before a start write, inside the shared operation lock, read realtime **and** slow state fresh. Block on not-idle, incomplete realtime, irrigation not confirmed enabled, terminal not confirmed available, or rain sensor / rain delay active **or unknown**. Also require the latest cloud refresh to have succeeded. Stop has none of these requirements and is a no-op only when a fresh complete read proves idle.  
 **Reason:** Slow data can be 5 minutes old; rain and controller state can change in that window. Asymmetric policy: an unnecessary refusal to start is cheap, an unintended start is not; an unnecessary stop is cheap, a blocked stop is not. Cost: a start takes a few extra seconds.
 
+## ADR-014 — Saved cloud snapshot keeps local stop available
+**Status:** Accepted 2026-10-10.  
+**Decision:** Persist the last good cloud snapshot per entry in HA storage. If the first cloud refresh fails at startup and local control is configured, load the snapshot and finish setup with the cloud coordinator still marked failed. Cloud entities stay unavailable and starts stay blocked until a live refresh succeeds; local entities and stop work. Without local control or without a snapshot, setup retries as before; credential rejection still triggers reauth. Serialization lives in the integration (`cache.py`) as an integration cache, not in the library.  
+**Reason:** Every entity is built from cloud data, so the cloud first refresh gated the whole entry; an IQ4/WAF outage at HA startup made local stop unavailable, contradicting ADR-002. Using an old snapshot for display is acceptable only while it is clearly marked unavailable and never used to authorize a start.
+
 ## ADR-013 — Real-HA test suite alongside stubs
 **Status:** Accepted 2026-10-10.  
 **Decision:** Add `tests_ha/`, run from the Core checkout with Core's pytest plugin, for anything that depends on HA behaviour (authorization, schemas, registries, lifecycle). Keep the existing stub suite for now; plan to migrate it.  

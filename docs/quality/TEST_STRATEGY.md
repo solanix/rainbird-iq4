@@ -23,7 +23,7 @@
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | 105 passed | Passed | Passed | Passed (strict) |
 | `ha-rainbird-iq4` stub | 75 passed | Passed | Passed | Passed |
-| `ha-rainbird-iq4` real HA | 58 passed | Passed | Passed | — |
+| `ha-rainbird-iq4` real HA | 66 passed | Passed | Passed | — |
 
 ## Regression coverage
 
@@ -47,7 +47,7 @@
 | Running/paused/stale/incomplete realtime state on start | Reject; zero writes | `tests::test_safe_start_rejects_invalid_preconditions`, `::test_safe_start_rejects_fresh_controller_state[started-meanwhile]` |
 | Rain sensor or rain delay active (or unknown) | Reject start | `tests_ha::test_start_station_blocked_by_rain_sensor`; `tests::test_safe_start_rejects_fresh_controller_state[rain*|delay*]` |
 | Cloud unavailable during start | Reject start | `tests_ha::test_start_station_requires_current_cloud_data` |
-| Cloud unavailable during stop | Stop remains available | `tests_ha::test_stop_running_without_cloud` |
+| Cloud unavailable during stop | Stop remains available | `tests_ha::test_stop_running_without_cloud`; at startup: `tests_ha::test_cloud_outage_at_startup_keeps_local_stop` |
 | Local state stale/unknown during stop | Stop sent once | `tests::test_stop_sends_when_state_is_unknown` |
 | Verified idle stop | Safe no-op; no wire command | `tests_ha::test_stop_idle_is_no_op`; `tests::test_stop_verified_idle_is_safe_no_op` |
 | Timeout after unknown delivery | Do not retry; explicit ambiguous result | `tests_ha::test_start_station_ambiguous_write`; `tests::test_safe_start_timeout_is_ambiguous_and_not_retried`, `::test_stop_timeout_is_ambiguous_and_not_retried` |

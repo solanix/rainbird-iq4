@@ -53,6 +53,10 @@ Check realtime coordinator **without** `_slow` suffix: `rainbird_iq4_200001_loca
 | `write_outcome_ambiguous` | Command may have executed. **Do not retry**; inspect physically, stop via app if needed |
 | `controller_unreachable` | Nothing was sent; check controller network reachability |
 
+## IQ4 cloud down when HA starts
+
+If the IQ4 cloud (or its WAF) is unreachable at startup and local control is configured, the entry still loads from the last saved cloud snapshot. The log shows one warning: `IQ4 cloud unavailable for controller …; using station data saved at …`. Expect cloud entities (station metadata, programs, controller connected) and the station picker to be unavailable and `start_station` to fail with `cloud_data_unavailable`; local state and `stop_irrigation` work. Nothing needs to be done: the next successful cloud poll (about every 5 minutes) restores everything. Diagnostics show `using_saved_data_since` while the snapshot is in use. A cloud-only entry, or a brand-new entry that has never refreshed successfully, still shows *Retrying setup*.
+
 ## Cloud password changed or rejected
 
 If IQ4 rejects the stored cloud credentials, HA shows **Re-authenticate** for the Rain Bird IQ4 entry (Settings → Devices & services, or the repairs/notifications area). Enter the current IQ4 cloud password; the integration checks that the account can still see the configured controller, then reloads. Until then cloud data is unavailable and `start_station` is refused with `cloud_data_unavailable`; `stop_irrigation` keeps working locally.

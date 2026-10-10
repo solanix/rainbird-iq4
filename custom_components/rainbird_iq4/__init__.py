@@ -6,9 +6,12 @@ from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
+from . import cache
 from .const import DOMAIN, PLATFORMS
 from .coordinator import (
     RainBirdIQ4Coordinator,
@@ -44,7 +47,14 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Rain Bird IQ4 from a config entry."""
     cloud_coordinator = RainBirdIQ4Coordinator(hass, entry)
-    await cloud_coordinator.async_config_entry_first_refresh()
+    try:
+        await cloud_coordinator.async_config_entry_first_refresh()
+    except ConfigEntryNotReady:
+        # Local stop must not depend on the cloud (ADR-002).
+        if not cloud_coordinator.local_configured or not (
+            await cloud_coordinator.async_use_saved_data()
+        ):
+            raise
     local_coordinator = None
     local_slow_coordinator = None
     if cloud_coordinator.local_configured:
@@ -60,6 +70,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Delete the saved cloud snapshot with the entry."""
+    await Store(hass, cache.STORAGE_VERSION, cache.storage_key(entry.entry_id)).async_remove()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
