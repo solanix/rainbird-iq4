@@ -58,7 +58,7 @@
 
 **Live-tested on desktop 2026-10-10** ([log](../quality/LIVE_VALIDATION_LOG.md)).
 
-**Remaining:** mobile layout review; idle `Remaining` shows `0.00 s` instead of unknown; decide whether to ship the dashboard as a strategy or keep it as an example; optional station-name customization in the picker.
+**Remaining:** mobile layout review; decide whether to ship the dashboard as a strategy or keep it as an example; optional station-name customization in the picker.
 
 Responsive desktop/mobile status panel with irrigation state, active station/program, remaining time, rain flags, enabled station selector, duration input, explicit Start and Stop. Do not expose disabled or unknown-state stations for start. Use the action response (`verified`, `no_op`) and error keys for feedback. Consider HA card/action confirmations for accidental watering. Plan accessibility, unavailable states and user-customized names.
 

@@ -8,7 +8,8 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Added `examples/script.yaml` and `examples/dashboard.yaml`. The script is loaded and run in the real-HA tests (starts the selected station; non-admin refused; no selection rejected visibly).
 - A failed slow poll now retries after 30/60/120 s instead of waiting the full 5 minutes.
 - Dashboard Start/Stop live-tested on desktop with Station 002.
-- Results: library 105; integration stub suite 79; real-HA suite 34.
+- Remaining runtime now displays whole seconds (`118 s`, not `118.00 s`).
+- Results: library 105; integration stub suite 79; real-HA suite 35.
 
 ## 2026-10-10 — Phase 2C accepted (live)
 
