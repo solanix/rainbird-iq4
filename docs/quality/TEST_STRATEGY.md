@@ -23,7 +23,7 @@
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | 105 passed | Passed | Passed | Passed (strict) |
 | `ha-rainbird-iq4` stub | 73 passed | Passed | Passed | Passed |
-| `ha-rainbird-iq4` real HA | 54 passed | Passed | Passed | — |
+| `ha-rainbird-iq4` real HA | 56 passed | Passed | Passed | — |
 
 ## Regression coverage
 
@@ -52,7 +52,7 @@
 | Verified idle stop | Safe no-op; no wire command | `tests_ha::test_stop_idle_is_no_op`; `tests::test_stop_verified_idle_is_safe_no_op` |
 | Timeout after unknown delivery | Do not retry; explicit ambiguous result | `tests_ha::test_start_station_ambiguous_write`; `tests::test_safe_start_timeout_is_ambiguous_and_not_retried`, `::test_stop_timeout_is_ambiguous_and_not_retried` |
 | Ack with no timely state transition | Unconfirmed; do not repeat | `tests::test_safe_start_unconfirmed_is_not_repeated`, `::test_stop_unconfirmed_is_not_repeated` |
-| Concurrent HA actions and coordinator polls | Serialized | Shared `_operation_lock` (design); `tests::test_overlapping_local_coordinator_refreshes_are_serialized`. **Gap:** no explicit action-vs-poll concurrency test yet |
+| Concurrent HA actions and coordinator polls | Serialized without deadlocks | `tests_ha::test_start_waits_for_in_flight_poll`, `::test_concurrent_start_and_stop_are_serialized`; `tests::test_overlapping_local_coordinator_refreshes_are_serialized` |
 | Multiple config entries | Targets only selected controller | `tests_ha::test_stop_targets_only_selected_controller`, `::test_start_station_rejects_ineligible_station` (two entries) |
 | Reload, final unload | No duplicates; unloaded entry rejected | `tests_ha::test_setup_and_reload_never_write`, `::test_actions_after_unload_are_rejected` |
 | HA startup/reload | No irrigation write ever | `tests_ha::test_setup_and_reload_never_write` |

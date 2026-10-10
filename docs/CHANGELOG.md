@@ -8,7 +8,8 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Config flow now uses Home Assistant's shared HTTP session.
 - Config, reauth and options flows are tested against real HA (`tests_ha/test_config_flow.py`, 18 tests, including the end-to-end reauth trigger and the duplicate-controller abort the stubs could not test). Six superseded stub flow tests removed.
 - Added a diagnostics download (Settings → Devices & services → Rain Bird IQ4 → ⋮ → Download diagnostics): coordinator health and latest cloud/local data, with username, passwords, local host/PIN, MAC, location and site name redacted; stations show the derived `is_enabled` next to raw `is_locked`. Snapshot-tested.
-- Results: library 105; integration stub suite 73; real-HA suite 54.
+- Added concurrency tests: a start issued mid-poll waits for the poll, and a stop sent while a start is writing runs after it; no deadlock.
+- Results: library 105; integration stub suite 73; real-HA suite 56.
 
 ## 2026-10-10 — Phase 2D started
 

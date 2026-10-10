@@ -29,7 +29,7 @@
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | **105 passed** | Passed | Passed | Passed (strict) |
 | `ha-rainbird-iq4` `tests/` (HA stubs) | **73 passed** | Passed | Passed | Passed |
-| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **54 passed** | Passed | Passed | Not in mypy scope |
+| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **56 passed** | Passed | Passed | Not in mypy scope |
 
 Baseline before Phase 2C was confirmed exactly as reported: 102 library / 58 integration, all gates clean. Earlier milestones: 73/50, 82/58, 99/58, 102/58.
 
