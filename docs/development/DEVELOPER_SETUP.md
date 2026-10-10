@@ -73,7 +73,7 @@ cd /workspaces/home-assistant-core  # tests_ha/ against real HA; must run from C
 python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq4/tests_ha
 ```
 
-Latest results (2026-10-10): library 105; integration stub suite 73; real-HA suite 56; all lint/format/type checks clean.
+Latest results (2026-10-10): library 105; integration stub suite 73; real-HA suite 57; all lint/format/type checks clean.
 
 ### Why two integration suites
 

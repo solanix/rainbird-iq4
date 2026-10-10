@@ -36,7 +36,7 @@ class StartStationSelect(RainBirdIQ4Entity, RestoreEntity, SelectEntity):
     Selecting only stores the choice; it never contacts the controller.
     """
 
-    _attr_name = "Start station"
+    _attr_translation_key = "start_station"
     _attr_icon = "mdi:sprinkler-variant"
 
     def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:

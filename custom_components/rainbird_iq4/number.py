@@ -28,7 +28,7 @@ async def async_setup_entry(
 class StartDurationNumber(RainBirdIQ4Entity, RestoreNumber):
     """Minutes a manual start will run; changing it never contacts the controller."""
 
-    _attr_name = "Start duration"
+    _attr_translation_key = "start_duration"
     _attr_icon = "mdi:timer-outline"
     _attr_mode = NumberMode.SLIDER
     _attr_native_min_value = 1

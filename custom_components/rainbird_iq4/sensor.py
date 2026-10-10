@@ -74,7 +74,7 @@ def _build_entities(
 class FirmwareVersionSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose the controller firmware version."""
 
-    _attr_name = "Firmware version"
+    _attr_translation_key = "firmware_version"
     _attr_icon = "mdi:chip"
 
     def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
@@ -89,7 +89,7 @@ class FirmwareVersionSensor(RainBirdIQ4Entity, SensorEntity):
 class StationCountSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose the controller station count."""
 
-    _attr_name = "Station count"
+    _attr_translation_key = "station_count"
     _attr_icon = "mdi:water-pump"
 
     def __init__(self, coordinator) -> None:
@@ -104,7 +104,7 @@ class StationCountSensor(RainBirdIQ4Entity, SensorEntity):
 class ProgramsUsedSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose the program count used."""
 
-    _attr_name = "Programs used count"
+    _attr_translation_key = "programs_used_count"
     _attr_icon = "mdi:calendar"
 
     def __init__(self, coordinator) -> None:
@@ -119,7 +119,7 @@ class ProgramsUsedSensor(RainBirdIQ4Entity, SensorEntity):
 class RainDelaySensor(RainBirdIQ4Entity, SensorEntity):
     """Expose rain delay when supplied by cloud metadata."""
 
-    _attr_name = "Rain delay"
+    _attr_translation_key = "rain_delay"
     _attr_icon = "mdi:weather-rainy"
 
     def __init__(self, coordinator) -> None:
@@ -135,7 +135,7 @@ class RainDelaySensor(RainBirdIQ4Entity, SensorEntity):
 class LocalRainDelaySensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Expose locally refreshed rain delay using the existing unique ID."""
 
-    _attr_name = "Rain delay"
+    _attr_translation_key = "rain_delay"
     _attr_icon = "mdi:weather-rainy"
 
     def __init__(
@@ -160,7 +160,7 @@ class LocalRainDelaySensor(RainBirdIQ4LocalEntity, SensorEntity):
 class IrrigationStateSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Expose the conservative local irrigation state."""
 
-    _attr_name = "Irrigation state"
+    _attr_translation_key = "irrigation_state"
     _attr_icon = "mdi:sprinkler-variant"
 
     def __init__(
@@ -203,7 +203,7 @@ class IrrigationStateSensor(RainBirdIQ4LocalEntity, SensorEntity):
 class ActiveStationSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Resolve the active local terminal to cloud station metadata."""
 
-    _attr_name = "Active station"
+    _attr_translation_key = "active_station"
     _attr_icon = "mdi:sprinkler"
 
     def __init__(
@@ -276,7 +276,7 @@ class ActiveStationSensor(RainBirdIQ4LocalEntity, SensorEntity):
 class QueueZonesRemainingSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Expose the page-zero zones-remaining count when supplied."""
 
-    _attr_name = "Queue zones remaining"
+    _attr_translation_key = "queue_zones_remaining"
     _attr_icon = "mdi:format-list-numbered"
 
     def __init__(
@@ -304,7 +304,7 @@ class QueueZonesRemainingSensor(RainBirdIQ4LocalEntity, SensorEntity):
 class ActiveProgramSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Resolve the page-one local program number to the cloud catalog."""
 
-    _attr_name = "Active program"
+    _attr_translation_key = "active_program"
     _attr_icon = "mdi:calendar-play"
 
     def __init__(
@@ -375,7 +375,7 @@ class ActiveProgramSensor(RainBirdIQ4LocalEntity, SensorEntity):
 class RemainingRuntimeSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Expose the matching active-terminal queue runtime."""
 
-    _attr_name = "Remaining runtime"
+    _attr_translation_key = "remaining_runtime"
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_suggested_display_precision = 0
@@ -416,7 +416,7 @@ class RemainingRuntimeSensor(RainBirdIQ4LocalEntity, SensorEntity):
 class ProgramSummarySensor(RainBirdIQ4Entity, SensorEntity):
     """Provide a useful summary of stations and programs."""
 
-    _attr_name = "Program summary"
+    _attr_translation_key = "program_summary"
     _attr_icon = "mdi:format-list-bulleted"
 
     def __init__(self, coordinator) -> None:

@@ -137,5 +137,60 @@
     "write_outcome_ambiguous": {
       "message": "The command may or may not have reached the controller. It was not retried; check the controller state before trying again."
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "controller_connected": {
+        "name": "Controller connected"
+      },
+      "irrigation_enabled": {
+        "name": "Irrigation enabled"
+      },
+      "rain_sensor_active": {
+        "name": "Rain sensor active"
+      }
+    },
+    "number": {
+      "start_duration": {
+        "name": "Start duration"
+      }
+    },
+    "select": {
+      "start_station": {
+        "name": "Start station"
+      }
+    },
+    "sensor": {
+      "active_program": {
+        "name": "Active program"
+      },
+      "active_station": {
+        "name": "Active station"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      },
+      "irrigation_state": {
+        "name": "Irrigation state"
+      },
+      "program_summary": {
+        "name": "Program summary"
+      },
+      "programs_used_count": {
+        "name": "Programs used count"
+      },
+      "queue_zones_remaining": {
+        "name": "Queue zones remaining"
+      },
+      "rain_delay": {
+        "name": "Rain delay"
+      },
+      "remaining_runtime": {
+        "name": "Remaining runtime"
+      },
+      "station_count": {
+        "name": "Station count"
+      }
+    }
   }
 }

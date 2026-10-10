@@ -1,0 +1,113 @@
+# serializer version: 1
+# name: test_entity_ids_and_names
+  dict({
+    'binary_sensor.controller_200001_controller_connected': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Controller connected',
+      'original_name': 'Controller connected',
+      'unique_id': '200001_connected',
+    }),
+    'binary_sensor.controller_200001_irrigation_enabled': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Irrigation enabled',
+      'original_name': 'Irrigation enabled',
+      'unique_id': '200001_irrigation_enabled',
+    }),
+    'binary_sensor.controller_200001_rain_sensor_active': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Rain sensor active',
+      'original_name': 'Rain sensor active',
+      'unique_id': '200001_rain_sensor_active',
+    }),
+    'number.controller_200001_start_duration': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Start duration',
+      'original_name': 'Start duration',
+      'unique_id': '200001_start_duration',
+    }),
+    'select.controller_200001_start_station': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Start station',
+      'original_name': 'Start station',
+      'unique_id': '200001_start_station_select',
+    }),
+    'sensor.controller_200001_active_program': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Active program',
+      'original_name': 'Active program',
+      'unique_id': '200001_active_program',
+    }),
+    'sensor.controller_200001_active_station': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Active station',
+      'original_name': 'Active station',
+      'unique_id': '200001_active_station',
+    }),
+    'sensor.controller_200001_firmware_version': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Firmware version',
+      'original_name': 'Firmware version',
+      'unique_id': '200001_firmware_version',
+    }),
+    'sensor.controller_200001_irrigation_state': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Irrigation state',
+      'original_name': 'Irrigation state',
+      'unique_id': '200001_irrigation_state',
+    }),
+    'sensor.controller_200001_program_summary': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Program summary',
+      'original_name': 'Program summary',
+      'unique_id': '200001_program_summary',
+    }),
+    'sensor.controller_200001_programs_used_count': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Programs used count',
+      'original_name': 'Programs used count',
+      'unique_id': '200001_programs_used_count',
+    }),
+    'sensor.controller_200001_queue_zones_remaining': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Queue zones remaining',
+      'original_name': 'Queue zones remaining',
+      'unique_id': '200001_queue_zones_remaining',
+    }),
+    'sensor.controller_200001_rain_delay': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Rain delay',
+      'original_name': 'Rain delay',
+      'unique_id': '200001_rain_delay',
+    }),
+    'sensor.controller_200001_remaining_runtime': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Remaining runtime',
+      'original_name': 'Remaining runtime',
+      'unique_id': '200001_remaining_runtime',
+    }),
+    'sensor.controller_200001_station_001_metadata': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Station 001 metadata',
+      'original_name': 'Station 001 metadata',
+      'unique_id': '200001_station_30000001',
+    }),
+    'sensor.controller_200001_station_008_metadata': dict({
+      'disabled_by': <RegistryEntryDisabler.INTEGRATION: 'integration'>,
+      'friendly_name': None,
+      'original_name': 'Station 008 metadata',
+      'unique_id': '200001_station_30000008',
+    }),
+    'sensor.controller_200001_station_009_metadata': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Station 009 metadata',
+      'original_name': 'Station 009 metadata',
+      'unique_id': '200001_station_30000009',
+    }),
+    'sensor.controller_200001_station_count': dict({
+      'disabled_by': None,
+      'friendly_name': 'Controller 200001 Station count',
+      'original_name': 'Station count',
+      'unique_id': '200001_station_count',
+    }),
+  })
+# ---

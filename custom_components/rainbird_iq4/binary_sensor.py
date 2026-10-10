@@ -40,7 +40,7 @@ def _build_entities(
 class ControllerConnectedBinarySensor(RainBirdIQ4Entity, BinarySensorEntity):
     """Represent whether the selected controller is connected."""
 
-    _attr_name = "Controller connected"
+    _attr_translation_key = "controller_connected"
 
     def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "connected")
@@ -61,7 +61,7 @@ class ControllerConnectedBinarySensor(RainBirdIQ4Entity, BinarySensorEntity):
 class IrrigationEnabledBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
     """Represent the controller AUTO/enabled flag, not active watering."""
 
-    _attr_name = "Irrigation enabled"
+    _attr_translation_key = "irrigation_enabled"
     _attr_icon = "mdi:water-check"
 
     def __init__(
@@ -86,7 +86,7 @@ class IrrigationEnabledBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
 class RainSensorActiveBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
     """Represent the local rain-sensor input."""
 
-    _attr_name = "Rain sensor active"
+    _attr_translation_key = "rain_sensor_active"
     _attr_icon = "mdi:weather-pouring"
 
     def __init__(

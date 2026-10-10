@@ -16,7 +16,7 @@ Reported Backyard entities include:
   - `number.backyard_start_duration` — 1–30 minutes, slider, default 5, restored across restarts; stays available during cloud outages.
   - Changing either never contacts the controller.
 
-Actual exact entity IDs may vary with naming and registry customizations. Confirm with HA Developer Tools → States.
+Entity IDs are pinned by `tests_ha/__snapshots__/test_sensor.ambr`; a change there is a breaking change for dashboards. Actual exact entity IDs may vary with naming and registry customizations. Confirm with HA Developer Tools → States.
 
 ## Control actions (implemented; live-validated 2026-10-10)
 
