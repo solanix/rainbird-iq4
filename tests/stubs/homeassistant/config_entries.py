@@ -4,11 +4,19 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, cast
 
 from .data_entry_flow import FlowResult
 
 ConfigFlowResult = FlowResult
+
+
+class ConfigEntryState(Enum):
+    """Config entry lifecycle states."""
+
+    LOADED = "loaded"
+    NOT_LOADED = "not_loaded"
 
 
 @dataclass

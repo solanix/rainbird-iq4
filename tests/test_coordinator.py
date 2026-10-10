@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -34,7 +35,11 @@ from custom_components.rainbird_iq4.const import (
     CONF_USERNAME,
 )
 from custom_components.rainbird_iq4.coordinator import (
+    IrrigationControlAmbiguousError,
+    IrrigationControlError,
     RainBirdIQ4Coordinator,
+    RainBirdIQ4Data,
+    RainBirdIQ4LocalConnection,
     RainBirdIQ4LocalCoordinator,
     RainBirdIQ4LocalSlowCoordinator,
 )
@@ -727,3 +732,318 @@ async def test_local_connection_failures_are_sanitized(
     assert type(failure).__name__ in output
     assert "local-secret" not in output
     assert "cloud-secret" not in output
+
+
+def _control_cloud_data(controller: Controller, *, enabled: bool | None = True) -> RainBirdIQ4Data:
+    """Build a minimal cloud catalog for internal control-boundary tests."""
+    return RainBirdIQ4Data(
+        controller=controller,
+        connected=True,
+        connection_status=None,
+        stale=False,
+        stations=[Station(30000001, controller.id, "Station 001", 1, enabled)],
+        programs=[],
+        scheduled_programs=[],
+        runtime_assignments=[],
+        effective_programs=[],
+    )
+
+
+def _control_entry(controller: Controller) -> Any:
+    return type(
+        "Entry",
+        (),
+        {
+            "data": {CONF_CONTROLLER_ID: controller.id},
+            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+        },
+    )()
+
+
+def _control_client(
+    *,
+    realtime: LocalIrrigationState | Exception | None = None,
+    slow: LocalIrrigationState | None = None,
+    start: Exception | None = None,
+    stop: Exception | None = None,
+    active_verified: bool = True,
+    idle_verified: bool = True,
+) -> Any:
+    """Build a local client double whose write methods record every attempt."""
+    return type(
+        "Client",
+        (),
+        {
+            "get_realtime_state": AsyncMock(
+                side_effect=realtime if isinstance(realtime, Exception) else None,
+                return_value=realtime or _local_state(),
+            ),
+            "get_slow_state": AsyncMock(return_value=slow or _local_state()),
+            "start_station": AsyncMock(side_effect=start),
+            "stop_irrigation": AsyncMock(side_effect=stop),
+            "wait_for_station_active": AsyncMock(return_value=active_verified),
+            "wait_for_idle": AsyncMock(return_value=idle_verified),
+        },
+    )()
+
+
+def _slow_state(**overrides: Any) -> LocalIrrigationState:
+    values: dict[str, Any] = {
+        "irrigation_enabled": True,
+        "active_terminals": (),
+        "available_terminals": (1, 2, 3),
+        "rain_sensor_active": False,
+        "rain_delay_days": 0,
+    }
+    values.update(overrides)
+    return LocalIrrigationState(**values)
+
+
+async def _start(
+    connection: RainBirdIQ4LocalConnection,
+    controller: Controller,
+    *,
+    station_id: int = 30000001,
+    duration: Any = 1,
+    enabled: bool | None = True,
+    telemetry: LocalIrrigationState | None = None,
+    updated_at: datetime | None = None,
+) -> Any:
+    return await connection.async_start_station(
+        station_id,
+        duration,
+        _control_cloud_data(controller, enabled=enabled),
+        telemetry or _local_state(),
+        updated_at or datetime.now(UTC),
+    )
+
+
+async def test_safe_start_resolves_station_id_and_verifies_state(hass, controller) -> None:
+    """A fresh idle start resolves stable cloud ID and verifies the active terminal."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client()
+    connection._client = client
+
+    result = await _start(connection, controller)
+
+    client.get_slow_state.assert_awaited_once_with()
+    client.start_station.assert_awaited_once_with(1, 1)
+    client.wait_for_station_active.assert_awaited_once_with(1)
+    assert result.acknowledged is True
+    assert result.verified is True
+    assert result.station_id == 30000001
+    assert result.terminal == 1
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "error_code"),
+    [
+        pytest.param({"duration": 0}, "invalid_duration", id="duration-zero"),
+        pytest.param({"duration": 31}, "invalid_duration", id="duration-too-long"),
+        pytest.param({"duration": True}, "invalid_duration", id="duration-bool"),
+        pytest.param({"duration": 1.5}, "invalid_duration", id="duration-float"),
+        pytest.param({"station_id": 99}, "station_not_found", id="cross-controller"),
+        pytest.param({"enabled": False}, "station_not_enabled", id="disabled"),
+        pytest.param({"enabled": None}, "station_not_enabled", id="enabled-unknown"),
+        pytest.param({"telemetry": _local_state(active=(2,))}, "controller_not_idle", id="busy"),
+        pytest.param(
+            {"updated_at": datetime(2020, 1, 1, tzinfo=UTC)}, "telemetry_stale", id="stale"
+        ),
+        pytest.param(
+            {
+                "telemetry": _slow_state(
+                    failed_commands=frozenset({"active_terminals"}),
+                    queue=_local_state().queue,
+                )
+            },
+            "telemetry_incomplete",
+            id="incomplete",
+        ),
+    ],
+)
+async def test_safe_start_rejects_invalid_preconditions(
+    hass, controller, kwargs: dict[str, Any], error_code: str
+) -> None:
+    """Unsafe starts fail before the controller is contacted."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client()
+    connection._client = client
+
+    with pytest.raises(IrrigationControlError, match=error_code):
+        await _start(connection, controller, **kwargs)
+
+    client.get_realtime_state.assert_not_awaited()
+    client.start_station.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("realtime", "slow", "error_code"),
+    [
+        pytest.param(
+            _local_state(active=(3,)), None, "controller_not_idle", id="started-meanwhile"
+        ),
+        pytest.param(None, _slow_state(rain_sensor_active=True), "rain_sensor_active", id="rain"),
+        pytest.param(None, _slow_state(rain_delay_days=2), "rain_delay_active", id="rain-delay"),
+        pytest.param(
+            None, _slow_state(rain_sensor_active=None), "rain_state_unknown", id="rain-unknown"
+        ),
+        pytest.param(
+            None, _slow_state(rain_delay_days=None), "rain_state_unknown", id="delay-unknown"
+        ),
+        pytest.param(
+            None, _slow_state(available_terminals=(2, 3)), "terminal_unavailable", id="terminal"
+        ),
+        pytest.param(
+            None,
+            _slow_state(available_terminals=None),
+            "terminal_unavailable",
+            id="terminal-unknown",
+        ),
+        pytest.param(
+            None, _slow_state(irrigation_enabled=False), "irrigation_disabled", id="global-off"
+        ),
+    ],
+)
+async def test_safe_start_rejects_fresh_controller_state(
+    hass,
+    controller,
+    realtime: LocalIrrigationState | None,
+    slow: LocalIrrigationState | None,
+    error_code: str,
+) -> None:
+    """The in-lock fresh reads block starts the coordinator snapshot could not see."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(realtime=realtime, slow=slow)
+    connection._client = client
+
+    with pytest.raises(IrrigationControlError, match=error_code):
+        await _start(connection, controller)
+
+    client.start_station.assert_not_awaited()
+
+
+async def test_safe_start_refresh_failure_sends_nothing(hass, controller) -> None:
+    """A failed preflight read resets the client and never writes."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(realtime=RainbirdConnectionError())
+    connection._client = client
+
+    with pytest.raises(IrrigationControlError, match="telemetry_refresh_failed"):
+        await _start(connection, controller)
+
+    client.start_station.assert_not_awaited()
+    assert connection._client is None
+
+
+async def test_safe_start_timeout_is_ambiguous_and_not_retried(hass, controller) -> None:
+    """A write timeout resets the client and is never retried automatically."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(start=TimeoutError())
+    connection._client = client
+
+    with pytest.raises(IrrigationControlAmbiguousError, match="write_outcome_ambiguous"):
+        await _start(connection, controller)
+
+    assert client.start_station.await_count == 1
+    client.wait_for_station_active.assert_not_awaited()
+    assert connection._client is None
+
+
+async def test_safe_start_unconfirmed_is_not_repeated(hass, controller) -> None:
+    """An acknowledged start without observed watering is reported, not retried."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(active_verified=False)
+    connection._client = client
+
+    result = await _start(connection, controller)
+
+    assert client.start_station.await_count == 1
+    assert result.acknowledged is True
+    assert result.verified is False
+
+
+async def test_control_connect_failure_means_not_sent(hass, controller) -> None:
+    """A failed local connection is a definite non-delivery, not an ambiguous write."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+
+    with (
+        patch(
+            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+            AsyncMock(side_effect=RainbirdConnectionError()),
+        ),
+        pytest.raises(IrrigationControlError, match="controller_unreachable") as err,
+    ):
+        await connection.async_stop_irrigation()
+
+    assert not isinstance(err.value, IrrigationControlAmbiguousError)
+
+
+async def test_stop_running_verifies_idle_without_cloud(hass, controller) -> None:
+    """Stop needs no cloud data and verifies the resulting idle state."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(realtime=_local_state(active=(1,)))
+    connection._client = client
+
+    result = await connection.async_stop_irrigation()
+
+    client.stop_irrigation.assert_awaited_once_with()
+    client.wait_for_idle.assert_awaited_once_with()
+    assert result.no_op is False
+    assert result.acknowledged is True
+    assert result.verified is True
+
+
+async def test_stop_verified_idle_is_safe_no_op(hass, controller) -> None:
+    """A complete idle snapshot means stop sends nothing."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client()
+    connection._client = client
+
+    result = await connection.async_stop_irrigation()
+
+    client.stop_irrigation.assert_not_awaited()
+    assert result.no_op is True
+    assert result.acknowledged is False
+    assert result.verified is True
+
+
+async def test_stop_sends_when_state_is_unknown(hass, controller) -> None:
+    """A failed pre-stop read cannot prove idle, so stop is still sent once."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(realtime=RainbirdConnectionError())
+    connection._client = client
+
+    with patch(
+        "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+        AsyncMock(return_value=client),
+    ):
+        result = await connection.async_stop_irrigation()
+
+    client.stop_irrigation.assert_awaited_once_with()
+    assert result.acknowledged is True
+
+
+async def test_stop_timeout_is_ambiguous_and_not_retried(hass, controller) -> None:
+    """A stop write timeout is reported as ambiguous after exactly one attempt."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(realtime=_local_state(active=(1,)), stop=TimeoutError())
+    connection._client = client
+
+    with pytest.raises(IrrigationControlAmbiguousError, match="write_outcome_ambiguous"):
+        await connection.async_stop_irrigation()
+
+    assert client.stop_irrigation.await_count == 1
+    client.wait_for_idle.assert_not_awaited()
+
+
+async def test_stop_unconfirmed_is_not_repeated(hass, controller) -> None:
+    """An acknowledged stop without observed idle is reported, not retried."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client(realtime=_local_state(active=(1,)), idle_verified=False)
+    connection._client = client
+
+    result = await connection.async_stop_irrigation()
+
+    assert client.stop_irrigation.await_count == 1
+    assert result.acknowledged is True
+    assert result.verified is False

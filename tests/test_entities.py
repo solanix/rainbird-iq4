@@ -301,6 +301,48 @@ def test_available_terminals_remain_physical_capacity() -> None:
     assert state.available_terminals == tuple(range(1, 11))
 
 
+def test_enabled_station_one_with_only_unscheduled_program_c_has_zero_effective_count() -> None:
+    """Metadata state zero is an effective-program count, not disabled state."""
+    coordinator = _make_entity_coordinator()
+    station = Station.from_dict(
+        {
+            "id": 30000001,
+            "name": "Station 001",
+            "terminal": 1,
+            "isLocked": True,
+        },
+        200001,
+    )
+    coordinator.data.controller = replace(coordinator.data.controller, id=200001, name="Backyard")
+    coordinator.data.stations = [station]
+    coordinator.data.runtime_assignments = [
+        StationRuntime(
+            30000001,
+            (RuntimeAssignment(1, 9999999, "C", "00:03:00", "00:03:00"),),
+        )
+    ]
+    entity = StationSensor(coordinator, station)
+
+    assert station.is_locked is True
+    assert station.is_enabled is True
+    assert entity.unique_id == "200001_station_30000001"
+    assert entity.native_value == 0
+    assert entity.extra_state_attributes["station_enabled"] is True
+    assert entity.extra_state_attributes["assigned_effective_program_count"] == 0
+    assert entity.extra_state_attributes["assigned_effective_programs"] == []
+    assert entity.extra_state_attributes["program_references"] == [
+        {
+            "program_id": 9999999,
+            "program_name": "C",
+            "adjusted_runtime": "00:03:00",
+            "base_runtime": "00:03:00",
+            "reference_source": "station_runtime_assignment",
+            "effective": False,
+            "scheduled": False,
+        }
+    ]
+
+
 def test_program_c_runtime_reference_is_retained_without_schedule_promotion() -> None:
     """Program C remains a neutral runtime reference, not an effective program."""
     coordinator = _make_entity_coordinator()

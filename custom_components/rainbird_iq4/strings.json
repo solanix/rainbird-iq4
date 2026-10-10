@@ -28,8 +28,8 @@
   "options": {
     "step": {
       "init": {
-        "title": "Local realtime polling",
-        "description": "Optional read-only local polling. Use the controller-local PIN, not the IQ4 cloud password.",
+        "title": "Local control",
+        "description": "Optional local connection for realtime status and admin-only start and stop actions. Use the controller-local PIN, not the IQ4 cloud password.",
         "data": {
           "local_host": "Controller IP address or hostname",
           "local_password": "Controller-local PIN"
@@ -38,6 +38,95 @@
     },
     "error": {
       "local_credentials_required": "Enter both a local controller host and controller-local PIN"
+    }
+  },
+  "services": {
+    "start_station": {
+      "name": "Start station",
+      "description": "Waters one enabled station for a fixed time. Refused unless the controller is idle, rain sensor and rain delay are clear, and the station is enabled in IQ4.",
+      "fields": {
+        "device_id": {
+          "name": "Controller",
+          "description": "The Rain Bird IQ4 controller to water from."
+        },
+        "station_id": {
+          "name": "Station ID",
+          "description": "The IQ4 cloud station ID (shown in the station sensor attributes), not the terminal number."
+        },
+        "duration_minutes": {
+          "name": "Duration",
+          "description": "Run time in whole minutes, from 1 to 30."
+        }
+      }
+    },
+    "stop_irrigation": {
+      "name": "Stop irrigation",
+      "description": "Stops all watering on the controller. Works without the IQ4 cloud; does nothing if the controller is confirmed idle.",
+      "fields": {
+        "device_id": {
+          "name": "Controller",
+          "description": "The Rain Bird IQ4 controller to stop."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_device": {
+      "message": "Device {device_id} is not a Rain Bird IQ4 controller."
+    },
+    "entry_not_loaded": {
+      "message": "The Rain Bird IQ4 entry {title} is not loaded."
+    },
+    "local_not_configured": {
+      "message": "Local control is not configured for {title}. Add the controller address and PIN in the integration options."
+    },
+    "invalid_duration": {
+      "message": "Duration must be a whole number of minutes from 1 to 30."
+    },
+    "station_not_found": {
+      "message": "That station ID does not belong to this controller."
+    },
+    "station_not_enabled": {
+      "message": "That station is not confirmed enabled in IQ4."
+    },
+    "cloud_data_unavailable": {
+      "message": "Current IQ4 station data is unavailable, so the station cannot be confirmed enabled."
+    },
+    "telemetry_unavailable": {
+      "message": "No local controller status is available yet."
+    },
+    "telemetry_stale": {
+      "message": "Local controller status is out of date."
+    },
+    "telemetry_incomplete": {
+      "message": "Local controller status is incomplete, so idle cannot be confirmed."
+    },
+    "telemetry_refresh_failed": {
+      "message": "Could not read controller status before starting. Nothing was sent."
+    },
+    "controller_not_idle": {
+      "message": "The controller is not confirmed idle. Stop the current run first."
+    },
+    "irrigation_disabled": {
+      "message": "Irrigation is not confirmed enabled on the controller."
+    },
+    "terminal_unavailable": {
+      "message": "The station's terminal is not confirmed available on the controller."
+    },
+    "rain_state_unknown": {
+      "message": "Rain sensor or rain delay state is unknown, so starting is blocked."
+    },
+    "rain_sensor_active": {
+      "message": "The rain sensor is active, so starting is blocked."
+    },
+    "rain_delay_active": {
+      "message": "A rain delay is active, so starting is blocked."
+    },
+    "controller_unreachable": {
+      "message": "Could not connect to the controller. Nothing was sent."
+    },
+    "write_outcome_ambiguous": {
+      "message": "The command may or may not have reached the controller. It was not retried; check the controller state before trying again."
     }
   }
 }

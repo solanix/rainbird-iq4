@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+ATTR_DEVICE_ID = "device_id"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 

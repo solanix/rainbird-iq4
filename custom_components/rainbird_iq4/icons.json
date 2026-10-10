@@ -1,0 +1,10 @@
+{
+  "services": {
+    "start_station": {
+      "service": "mdi:sprinkler-variant"
+    },
+    "stop_irrigation": {
+      "service": "mdi:water-off"
+    }
+  }
+}

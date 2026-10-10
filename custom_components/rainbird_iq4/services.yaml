@@ -1,0 +1,33 @@
+start_station:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: rainbird_iq4
+    station_id:
+      required: true
+      example: 30000001
+      selector:
+        number:
+          min: 1
+          max: 2147483647
+          mode: box
+    duration_minutes:
+      required: true
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 30
+          step: 1
+          unit_of_measurement: min
+          mode: slider
+
+stop_irrigation:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: rainbird_iq4

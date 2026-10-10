@@ -1,6 +1,7 @@
 # Rain Bird IQ4 for Home Assistant
 
-Read-only Home Assistant custom integration for Rain Bird IQ4 controllers using the sibling library `pyrainbird-iq4`.
+Home Assistant custom integration for Rain Bird IQ4 controllers using the sibling library `pyrainbird-iq4`.
+It reads cloud metadata and local controller state, and offers admin-only manual station start and stop actions.
 
 ## Development setup
 
@@ -63,12 +64,33 @@ Before production installation, publish `pyrainbird-iq4`, add its pinned release
 real documentation and issue-tracker URLs. The current manifest deliberately makes no
 claim that the library is available from PyPI.
 
+## Tests
+
+`tests/` runs against lightweight Home Assistant stubs:
+
+```bash
+cd /workspaces/ha-rainbird-iq4
+python3 -m pytest
+```
+
+`tests_ha/` covers the control actions, admin authorization and entry lifecycle against
+the real Home Assistant Core checkout and its test fixtures. Run it from Core:
+
+```bash
+cd /workspaces/home-assistant-core
+python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq4/tests_ha
+```
+
+All tests are offline; no test contacts the cloud or a controller.
+
 ## Scope
 
-- Read-only cloud polling
+- Cloud polling of controller, station and program metadata
 - Controller discovery and selection
-- Device metadata and sensors
-- No irrigation controls, service calls, or schedule writes yet
+- Device metadata and sensors; optional local realtime polling
+- Admin-only `rainbird_iq4.start_station` and `rainbird_iq4.stop_irrigation` actions
+  (requires local polling to be configured)
+- No program starts or schedule writes
 
 ## License
 

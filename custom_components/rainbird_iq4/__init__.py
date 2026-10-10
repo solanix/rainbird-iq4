@@ -6,14 +6,19 @@ from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 
-from .const import PLATFORMS
+from .const import DOMAIN, PLATFORMS
 from .coordinator import (
     RainBirdIQ4Coordinator,
     RainBirdIQ4LocalConnection,
     RainBirdIQ4LocalCoordinator,
     RainBirdIQ4LocalSlowCoordinator,
 )
+from .services import async_setup_services
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 @dataclass(slots=True)
@@ -23,6 +28,12 @@ class RainBirdIQ4RuntimeData:
     cloud: RainBirdIQ4Coordinator
     local: RainBirdIQ4LocalCoordinator | None
     local_slow: RainBirdIQ4LocalSlowCoordinator | None
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register control actions once, independent of config entry lifecycle."""
+    async_setup_services(hass)
+    return True
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:

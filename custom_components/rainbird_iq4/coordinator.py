@@ -300,6 +300,11 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
             update_interval=LOCAL_IDLE_UPDATE_INTERVAL,
         )
 
+    @property
+    def connection(self) -> RainBirdIQ4LocalConnection:
+        """Return the serialized local connection shared with control actions."""
+        return self._connection
+
     async def _async_update_data(self) -> LocalIrrigationState:
         """Fetch one local snapshot without invoking any cloud operation."""
         async with self._refresh_lock:
@@ -373,6 +378,52 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
         return interval
 
 
+class IrrigationControlError(Exception):
+    """A safe local irrigation control precondition failed."""
+
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
+class IrrigationControlAmbiguousError(IrrigationControlError):
+    """A write may have reached the controller but could not be confirmed."""
+
+
+@dataclass(frozen=True, slots=True)
+class IrrigationControlResult:
+    """Separate protocol acknowledgement from observed post-write state."""
+
+    action: str
+    acknowledged: bool
+    verified: bool
+    station_id: int | None = None
+    terminal: int | None = None
+    no_op: bool = False
+
+
+def _check_realtime_idle(state: LocalIrrigationState) -> None:
+    """Reject a start unless complete realtime data proves the controller idle."""
+    if state.failed_commands & {"active_terminals", "current_queue_page_0"}:
+        raise IrrigationControlError("telemetry_incomplete")
+    if not state.confirms_idle:
+        raise IrrigationControlError("controller_not_idle")
+
+
+def _check_start_safety(state: LocalIrrigationState, terminal: int) -> None:
+    """Reject a start unless fresh slow data proves it is permitted; unknown blocks."""
+    if state.irrigation_enabled is not True:
+        raise IrrigationControlError("irrigation_disabled")
+    if state.available_terminals is None or terminal not in state.available_terminals:
+        raise IrrigationControlError("terminal_unavailable")
+    if state.rain_sensor_active is None or state.rain_delay_days is None:
+        raise IrrigationControlError("rain_state_unknown")
+    if state.rain_sensor_active:
+        raise IrrigationControlError("rain_sensor_active")
+    if state.rain_delay_days != 0:
+        raise IrrigationControlError("rain_delay_active")
+
+
 class RainBirdIQ4LocalConnection:
     """Share one serialized local client across realtime and slow polling."""
 
@@ -418,6 +469,125 @@ class RainBirdIQ4LocalConnection:
             if state.transport_failure:
                 await self.async_reset(client)
             return state
+
+    async def _async_get_control_client(self) -> RainBirdIQ4LocalClient:
+        """Connect for a control operation; failure here means nothing was sent."""
+        try:
+            return await self.async_get_client()
+        except Exception as err:
+            raise IrrigationControlError("controller_unreachable") from err
+
+    async def async_start_station(
+        self,
+        station_id: int,
+        duration_minutes: int,
+        cloud_data: RainBirdIQ4Data | None,
+        telemetry: LocalIrrigationState | None,
+        telemetry_updated_at: datetime | None,
+    ) -> IrrigationControlResult:
+        """Start an enabled station only from fresh, confirmed-idle telemetry."""
+        if (
+            not isinstance(duration_minutes, int)
+            or isinstance(duration_minutes, bool)
+            or not 1 <= duration_minutes <= 30
+        ):
+            raise IrrigationControlError("invalid_duration")
+        if cloud_data is None:
+            raise IrrigationControlError("cloud_data_unavailable")
+        station = next((item for item in cloud_data.stations if item.id == station_id), None)
+        if station is None:
+            raise IrrigationControlError("station_not_found")
+        if station.is_enabled is not True:
+            raise IrrigationControlError("station_not_enabled")
+        if telemetry is None or telemetry_updated_at is None:
+            raise IrrigationControlError("telemetry_unavailable")
+        if datetime.now(UTC) - telemetry_updated_at > timedelta(seconds=60):
+            raise IrrigationControlError("telemetry_stale")
+        _check_realtime_idle(telemetry)
+        async with self._operation_lock:
+            client = await self._async_get_control_client()
+            try:
+                current = await client.get_realtime_state()
+                safety = await client.get_slow_state()
+            except Exception as err:
+                await self.async_reset(client)
+                raise IrrigationControlError("telemetry_refresh_failed") from err
+            _check_realtime_idle(current)
+            _check_start_safety(safety, station.terminal)
+            try:
+                await client.start_station(station.terminal, duration_minutes)
+            except Exception as err:
+                await self.async_reset(client)
+                _LOGGER.warning(
+                    "IQ4 local control controller=%s action=start_station station_id=%s "
+                    "terminal=%s status=ambiguous exception=%s",
+                    self._entry.data[CONF_CONTROLLER_ID],
+                    station.id,
+                    station.terminal,
+                    type(err).__name__,
+                )
+                raise IrrigationControlAmbiguousError("write_outcome_ambiguous") from err
+            try:
+                verified = await client.wait_for_station_active(station.terminal)
+            except Exception as err:
+                await self.async_reset(client)
+                _LOGGER.debug(
+                    "IQ4 local control controller=%s action=start_station "
+                    "status=acknowledged verification=failed exception=%s",
+                    self._entry.data[CONF_CONTROLLER_ID],
+                    type(err).__name__,
+                )
+                verified = False
+
+        return IrrigationControlResult(
+            action="start_station",
+            acknowledged=True,
+            verified=verified,
+            station_id=station.id,
+            terminal=station.terminal,
+        )
+
+    async def async_stop_irrigation(self) -> IrrigationControlResult:
+        """Stop once without requiring cloud data or fresh coordinator telemetry."""
+        async with self._operation_lock:
+            client = await self._async_get_control_client()
+            try:
+                current: LocalIrrigationState | None = await client.get_realtime_state()
+            except Exception:
+                await self.async_reset(client)
+                client = await self._async_get_control_client()
+                current = None
+            if current is not None and current.confirms_idle:
+                return IrrigationControlResult(
+                    "stop_irrigation", acknowledged=False, verified=True, no_op=True
+                )
+            try:
+                await client.stop_irrigation()
+            except Exception as err:
+                await self.async_reset(client)
+                _LOGGER.warning(
+                    "IQ4 local control controller=%s action=stop_irrigation "
+                    "status=ambiguous exception=%s",
+                    self._entry.data[CONF_CONTROLLER_ID],
+                    type(err).__name__,
+                )
+                raise IrrigationControlAmbiguousError("write_outcome_ambiguous") from err
+            try:
+                verified = await client.wait_for_idle()
+            except Exception as err:
+                await self.async_reset(client)
+                _LOGGER.debug(
+                    "IQ4 local control controller=%s action=stop_irrigation "
+                    "status=acknowledged verification=failed exception=%s",
+                    self._entry.data[CONF_CONTROLLER_ID],
+                    type(err).__name__,
+                )
+                verified = False
+        return IrrigationControlResult(
+            "stop_irrigation",
+            acknowledged=True,
+            verified=verified,
+        )
 
     async def async_get_slow_state(self) -> LocalIrrigationState:
         """Run one slow snapshot exclusively and reset failed transports."""

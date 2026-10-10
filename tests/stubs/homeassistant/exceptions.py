@@ -9,3 +9,7 @@ class HomeAssistantError(Exception):
 
 class ConfigEntryAuthFailed(HomeAssistantError):
     """Raised when the config entry credentials are invalid."""
+
+
+class ServiceValidationError(HomeAssistantError):
+    """Raised when a service call is invalid."""
