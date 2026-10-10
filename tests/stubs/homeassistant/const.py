@@ -13,6 +13,8 @@ class Platform(StrEnum):
     """Platform enum used by custom integrations."""
 
     BINARY_SENSOR = "binary_sensor"
+    NUMBER = "number"
+    SELECT = "select"
     SENSOR = "sensor"
 
 
@@ -20,3 +22,4 @@ class UnitOfTime(StrEnum):
     """Time units used by sensor entities."""
 
     SECONDS = "s"
+    MINUTES = "min"

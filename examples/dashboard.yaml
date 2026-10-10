@@ -1,0 +1,89 @@
+# Irrigation dashboard for one Rain Bird IQ4 controller.
+# Settings → Dashboards → Add dashboard → New dashboard from scratch, open it,
+# ⋮ → Edit dashboard → ⋮ → Raw configuration editor, and paste this file.
+# Requires the script in script.yaml. The Start button calls script.<script ID>;
+# if the UI gave your script a different ID, change perform_action to match. Replace REPLACE_WITH_DEVICE_ID and, if your
+# controller is not named "Backyard", the entity IDs.
+title: Irrigation
+views:
+  - title: Backyard
+    path: backyard
+    icon: mdi:sprinkler
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Status
+            icon: mdi:sprinkler
+          - type: tile
+            entity: sensor.backyard_irrigation_state
+            name: State
+          - type: tile
+            entity: sensor.backyard_active_station
+            name: Active station
+          - type: tile
+            entity: sensor.backyard_remaining_runtime
+            name: Remaining
+          - type: tile
+            entity: sensor.backyard_queue_zones_remaining
+            name: Zones queued
+          - type: tile
+            entity: binary_sensor.backyard_rain_sensor_active
+            name: Rain sensor
+          - type: tile
+            entity: sensor.backyard_rain_delay
+            name: Rain delay
+          - type: tile
+            entity: binary_sensor.backyard_irrigation_enabled
+            name: Irrigation enabled
+          - type: tile
+            entity: binary_sensor.backyard_controller_connected
+            name: Cloud connected
+      - type: grid
+        cards:
+          - type: heading
+            heading: Manual watering
+            icon: mdi:water
+          - type: tile
+            entity: select.backyard_start_station
+            name: Station
+            grid_options:
+              columns: 12
+            features:
+              - type: select-options
+          - type: tile
+            entity: number.backyard_start_duration
+            name: Duration
+            grid_options:
+              columns: 12
+            features:
+              - type: numeric-input
+                style: slider
+          - type: button
+            name: Start
+            icon: mdi:play
+            grid_options:
+              columns: 6
+              rows: 2
+            visibility:
+              - condition: state
+                entity: sensor.backyard_irrigation_state
+                state: idle
+            tap_action:
+              action: perform-action
+              perform_action: script.rainbird_backyard_start_selected
+              confirmation:
+                text: Start watering the selected station for the chosen duration?
+          - type: button
+            name: Stop
+            icon: mdi:stop
+            grid_options:
+              columns: 6
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: rainbird_iq4.stop_irrigation
+              data:
+                device_id: REPLACE_WITH_DEVICE_ID

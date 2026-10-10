@@ -144,7 +144,9 @@ def _local_state(*, active: tuple[int, ...] = ()) -> LocalIrrigationState:
     )
 
 
-def _poll_interval_seconds(coordinator: RainBirdIQ4LocalCoordinator) -> int:
+def _poll_interval_seconds(
+    coordinator: RainBirdIQ4LocalCoordinator | RainBirdIQ4LocalSlowCoordinator,
+) -> int:
     """Return the configured local interval with a non-optional test assertion."""
     interval = coordinator.update_interval
     assert interval is not None
@@ -585,6 +587,43 @@ async def test_slow_partial_failure_preserves_values_and_realtime_state(hass, co
     assert slow.update_interval.total_seconds() == 300
     assert connection.async_get_realtime_state.await_count == 1
     assert connection.async_get_slow_state.await_count == 2
+
+
+async def test_slow_failure_retries_with_backoff_then_recovers(hass, controller) -> None:
+    """A failed slow poll retries at 30/60/120 seconds, then returns to five minutes."""
+    entry = type(
+        "Entry",
+        (),
+        {
+            "data": {CONF_CONTROLLER_ID: controller.id},
+            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+            "entry_id": "abc",
+        },
+    )()
+    connection = type(
+        "Connection",
+        (),
+        {
+            "async_get_slow_state": AsyncMock(
+                side_effect=[
+                    RainbirdConnectionError(),
+                    RainbirdConnectionError(),
+                    RainbirdConnectionError(),
+                    RainbirdConnectionError(),
+                    LocalIrrigationState(True, (), (1, 2, 3), False, 0),
+                ]
+            ),
+        },
+    )()
+    slow = RainBirdIQ4LocalSlowCoordinator(hass, entry, connection)
+
+    intervals = []
+    for _ in range(5):
+        await slow.async_refresh()
+        intervals.append(_poll_interval_seconds(slow))
+
+    assert intervals == [30, 60, 120, 120, 300]
+    assert slow.last_update_success is True
 
 
 async def test_overlapping_local_coordinator_refreshes_are_serialized(hass, controller) -> None:

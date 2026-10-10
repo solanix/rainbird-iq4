@@ -631,7 +631,13 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
             state = await self._connection.async_get_slow_state()
         except Exception as err:
             self.consecutive_failures += 1
+            # Retry sooner than the slow interval so rain entities do not stay
+            # unavailable for five minutes after a brief connection drop.
+            self.update_interval = LOCAL_FAILURE_BACKOFF_INTERVALS[
+                min(self.consecutive_failures, len(LOCAL_FAILURE_BACKOFF_INTERVALS)) - 1
+            ]
             raise UpdateFailed(f"Local IQ4 slow update failed: {type(err).__name__}") from err
+        self.update_interval = LOCAL_SLOW_UPDATE_INTERVAL
         previous = getattr(self, "data", None)
         if previous is not None:
             state = LocalIrrigationState(

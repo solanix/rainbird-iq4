@@ -1,0 +1,26 @@
+# Starts the station chosen in the "Start station" picker for the "Start duration" minutes.
+# Either paste this whole file into scripts.yaml, or in the UI use Settings →
+# Automations & scenes → Scripts → Add script → ⋮ → Edit in YAML and paste
+# everything below the first key. The UI generates the script ID from the alias
+# (e.g. backyard_start_selected_station), so then change the dashboard's Start
+# button to call script.<that ID>. The action name follows the script ID, not the
+# entity ID. Replace the entity IDs if your controller is not
+# named "Backyard", and REPLACE_WITH_DEVICE_ID with the controller's device ID
+# (Settings → Devices & services → Rain Bird IQ4 → device; the ID is in the URL).
+#
+# The admin check in rainbird_iq4.start_station applies to whoever runs this script.
+# With no station selected, start_station rejects the call and the error is shown
+# to the caller (a script `stop` would end silently instead).
+rainbird_backyard_start_selected:
+  alias: Backyard - start selected station
+  icon: mdi:sprinkler-variant
+  mode: single
+  sequence:
+    - variables:
+        station_id: "{{ state_attr('select.backyard_start_station', 'station_id') }}"
+        duration_minutes: "{{ states('number.backyard_start_duration') | int(0) }}"
+    - action: rainbird_iq4.start_station
+      data:
+        device_id: REPLACE_WITH_DEVICE_ID
+        station_id: "{{ station_id }}"
+        duration_minutes: "{{ duration_minutes }}"

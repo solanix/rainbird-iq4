@@ -90,6 +90,7 @@ All tests are offline; no test contacts the cloud or a controller.
 - Device metadata and sensors; optional local realtime polling
 - Admin-only `rainbird_iq4.start_station` and `rainbird_iq4.stop_irrigation` actions
   (requires local polling to be configured)
+- Station picker and duration entities, with an example script and dashboard in `examples/`
 - No program starts or schedule writes
 
 ## License
