@@ -33,7 +33,7 @@
 - Stopped active Station 001 through 0x40; acknowledged and verified.
 - Did not validate program-start argument numbering or pause/resume.
 
-## Phase 2C — Public Home Assistant actions (implemented offline; live acceptance pending)
+## Phase 2C — Public Home Assistant actions (accepted 2026-10-10)
 
 | Deliverable | State |
 |---|---|
@@ -45,14 +45,14 @@
 | Distinguish verified / unconfirmed / rejected / ambiguous | Done (response data + translated errors) |
 | Tests: setup/reload, auth, multi-controller, inputs, outcomes, teardown; no live writes | Done (78 stub + 23 real-HA) |
 
-**Acceptance gate remaining:**
+**Acceptance gate:**
 
-- [ ] HA restarts and loads both actions with no errors and no writes.
-- [ ] Supervised manual validation via Developer Tools ([procedure](../operations/CONTROL_SAFETY.md#supervised-ha-action-validation)), recorded with the log template.
-- [ ] Recorder healthy after restart.
-- [ ] Diffs reviewed and committed per repository on user request.
+- [x] HA restarts and loads both actions with no errors and no writes.
+- [x] Supervised manual validation via Developer Tools ([log](../quality/LIVE_VALIDATION_LOG.md)).
+- [x] Recorder healthy after restart (no disk-full or rollback errors).
+- [x] Committed per repository.
 
-## Phase 2D — Dashboard/UI (after Phase 2C acceptance)
+## Phase 2D — Dashboard/UI (next)
 
 Responsive desktop/mobile status panel with irrigation state, active station/program, remaining time, rain flags, enabled station selector, duration input, explicit Start and Stop. Do not expose disabled or unknown-state stations for start. Use the action response (`verified`, `no_op`) and error keys for feedback. Consider HA card/action confirmations for accidental watering. Plan accessibility, unavailable states and user-customized names.
 
@@ -73,8 +73,6 @@ Investigate SIP `0x38` numeric program argument mapping from actual library enco
 
 | Priority | Item | Reason |
 |---|---|---|
-| P0 | Supervised HA action validation | Last Phase 2C acceptance gate |
-| P0 | Review and commit Phase 2A–2C per repository (on request) | ~1,000+ uncommitted lines across two repos |
 | P0 | Verify disk/Recorder health after restart | Earlier SQLite writes failed |
 | P0 | Preserve exact-once write semantics | Watering commands have physical effects |
 | P1 | Responsive dashboard with station picker | Primary end-user interaction; replaces raw station ID entry |

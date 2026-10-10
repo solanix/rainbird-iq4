@@ -14,7 +14,7 @@ Reported Backyard entities include:
 
 Actual exact entity IDs may vary with naming and registry customizations. Confirm with HA Developer Tools → States.
 
-## Control actions (implemented; not yet live-validated through HA)
+## Control actions (implemented; live-validated 2026-10-10)
 
 Both actions are registered once in `async_setup` with `async_register_admin_service`, so **only admin users** can call them. Both support optional response data (`return_response: true` in scripts, or "return response" in Developer Tools). Local control must be configured in the integration options (controller address and controller-local PIN).
 

@@ -73,7 +73,7 @@ These commands have already been manually run and validated for controller 20000
 
 ## Supervised HA action validation
 
-**Not yet performed.** Operator-only; agents and automation must not run it.
+**Performed 2026-10-10; all steps passed** — see [LIVE_VALIDATION_LOG.md](../quality/LIVE_VALIDATION_LOG.md). Repeat after changes to the control path, on new firmware, or on a new controller. Operator-only; agents and automation must not run it.
 
 1. Confirm safe conditions: Station 001 area clear, operator can see it, and can stop watering via the IQ4 app or at the controller. No standalone diagnostic running.
 2. Restart HA. Check the log for no `rainbird_iq4` errors and that nothing started watering. Developer Tools → States: `sensor.backyard_irrigation_state` is `idle`.

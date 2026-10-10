@@ -2,6 +2,11 @@
 
 This is a **reported milestone history**, not a Git commit history. Exact dates for some intermediate milestones were not recorded; all milestones predate or occurred on 2026-10-10.
 
+## 2026-10-10 — Phase 2C accepted (live)
+
+- Operator-supervised test through HA Developer Tools on controller 200001: idle stop returned `no_op` with nothing sent; Station 001 one-minute start and the following stop each sent exactly one write and verified; disabled Station 008 was refused. Details in [LIVE_VALIDATION_LOG.md](quality/LIVE_VALIDATION_LOG.md).
+- Phase 2A–2C committed locally in both repositories.
+
 ## 2026-10-10 — Phase 2C implemented (offline)
 
 - Repositories directly inspected; baseline 102 library / 58 integration tests and all lint/type gates confirmed.
@@ -12,7 +17,6 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Added `tests_ha/`, a suite that runs against the real Home Assistant Core checkout (23 tests), alongside the existing stub suite.
 - Library repo: untracked `.pyc` and `egg-info` files; added `.gitignore`.
 - Results: library 105 passed; integration stub suite 78 passed; real-HA suite 23 passed; Ruff/format/mypy passed.
-- Not done: live validation through HA; commits.
 
 ## 2026-10-10 — Phase 2B completed
 

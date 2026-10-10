@@ -81,10 +81,7 @@ Latest results (2026-10-10): library 105; integration stub suite 78; real-HA sui
 
 ## Git working tree
 
-Nothing from Phase 2A–2C is committed. As of 2026-10-10:
-
-- `pyrainbird-iq4`: modified `local.py`, `local_diagnostic.py`, `tests/test_local.py`, `tests/test_local_diagnostic.py`; new `.gitignore`; **staged** removal of 35 tracked `.pyc` and 6 `egg-info` files (files remain on disk; the editable install needs `egg-info`).
-- `ha-rainbird-iq4`: modified `__init__.py`, `coordinator.py`, `strings.json`, `translations/en.json`, `README.md`, `pyproject.toml`, tests and stubs; new `services.py`, `services.yaml`, `icons.json`, `tests_ha/`, `docs/`.
+Phase 2A–2C is committed on `master` in both repositories (no remotes configured). Build artifacts (`__pycache__`, `*.egg-info`) are ignored in both.
 
 Check before acting:
 

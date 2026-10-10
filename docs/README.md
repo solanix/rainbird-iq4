@@ -2,7 +2,7 @@
 
 **Project:** Rain Bird IQ4 / Home Assistant integration  
 **Documentation baseline:** 2026-10-10 (revised after Phase 2C implementation)  
-**Status:** Read-only cloud/local integration operational; local manual station start and stop live-validated through the library; Home Assistant admin-only `start_station`/`stop_irrigation` actions **implemented and offline-tested, not yet live-validated through HA**.  
+**Status:** Read-only cloud/local integration operational; local manual station start and stop live-validated through the library; Home Assistant admin-only `start_station`/`stop_irrigation` actions **implemented, offline-tested and live-validated through HA (Phase 2C accepted 2026-10-10)**.  
 **Repositories:** `pyrainbird-iq4`, `ha-rainbird-iq4` (this repository, which now hosts these docs), and an unmodified Home Assistant Core development runtime.
 
 ## Purpose
@@ -25,6 +25,7 @@ Build a secure, reliable, maintainable Home Assistant custom integration for Rai
 | [operations/RUNBOOK.md](operations/RUNBOOK.md) | Troubleshooting, logs, Recorder, local diagnostics and actions |
 | [operations/CONTROL_SAFETY.md](operations/CONTROL_SAFETY.md) | Safety policy, state confirmation, test protocol |
 | [quality/TEST_STRATEGY.md](quality/TEST_STRATEGY.md) | Test boundaries, regression matrix, evidence |
+| [quality/LIVE_VALIDATION_LOG.md](quality/LIVE_VALIDATION_LOG.md) | Records of supervised live tests |
 | [decisions/ADR_LOG.md](decisions/ADR_LOG.md) | Architecture decision log |
 | [CHANGELOG.md](CHANGELOG.md) | Project development history and milestones |
 
@@ -48,7 +49,7 @@ The diagnostic prompts for a **local controller password**; never store that sec
 
 ## Key status boundary
 
-A controller advertising support for a SIP command is not the same as live command validation. Live tests confirmed station start (`0x39`) and stop (`0x40`) with state verification through the library diagnostic. Program start (`0x38`) is **advertised supported only**; program input numbering has not been verified. The HA actions wrap the same library calls but have **not** yet been exercised against the real controller; see the supervised procedure in [CONTROL_SAFETY.md](operations/CONTROL_SAFETY.md).
+A controller advertising support for a SIP command is not the same as live command validation. Live tests confirmed station start (`0x39`) and stop (`0x40`) with state verification through the library diagnostic. Program start (`0x38`) is **advertised supported only**; program input numbering has not been verified. The HA actions were then validated live on 2026-10-10; see [LIVE_VALIDATION_LOG.md](quality/LIVE_VALIDATION_LOG.md).
 
 ## Evidence provenance
 

@@ -14,9 +14,9 @@
 
 ## Current state (2026-10-10)
 
-Phase 2C is implemented and offline-tested; see [PROJECT_STATUS.md](../PROJECT_STATUS.md). Nothing from Phase 2A–2C is committed. The remaining Phase 2C gate is operator-supervised validation, which a developer or agent must **not** perform.
+Phase 2C is accepted: implemented, offline-tested, committed locally, and live-validated by the operator ([LIVE_VALIDATION_LOG.md](../quality/LIVE_VALIDATION_LOG.md)). Live tests remain operator-only; a developer or agent must **not** perform them.
 
-## Next task: Phase 2D dashboard (after supervised 2C acceptance)
+## Next task: Phase 2D dashboard
 
 ```text
 Design and implement a Home Assistant dashboard for Rain Bird IQ4 control in

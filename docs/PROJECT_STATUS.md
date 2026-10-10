@@ -1,6 +1,6 @@
 # Project Status and Completion Matrix
 
-**As of:** October 10, 2026, after Phase 2C implementation. Repository source, tests and quality gates were **directly inspected and re-run** on this date. Live controller evidence is from earlier operator-run diagnostics; no live controller contact occurred during Phase 2C.
+**As of:** October 10, 2026, after Phase 2C live acceptance. Repository source, tests and quality gates were **directly inspected and re-run** on this date. Live controller evidence is from operator-run diagnostics and the supervised HA action test recorded in [LIVE_VALIDATION_LOG.md](quality/LIVE_VALIDATION_LOG.md).
 
 | Capability | Status | Evidence / caveat |
 |---|---|---|
@@ -16,12 +16,12 @@
 | Local command-support query (`0x04`) | Live-validated | `0x38`, `0x39`, `0x40` each returned SUPPORTED |
 | Python manual station start (`0x39`) | **Live-validated** | Station 001 terminal 1; state and queue confirmed actual running |
 | Python stop irrigation (`0x40`) | **Live-validated** | Active run stopped; diagnostic returned ACKNOWLEDGED verified=True |
-| Bounded read-only post-write verification | Implemented; start live-observed | Start: `wait_for_station_active`; stop: new `wait_for_idle`. Up to 5 snapshots, 1 sec spacing; never repeats a write |
+| Bounded read-only post-write verification | Implemented and live-observed (start and stop) | Start: `wait_for_station_active`; stop: new `wait_for_idle`. Up to 5 snapshots, 1 sec spacing; never repeats a write |
 | Internal HA control boundary | Implemented and offline-tested (inspected) | Corrected on 2026-10-10 to match the safety policy; see discrepancies below |
-| Public HA `start_station`/`stop_irrigation` actions | **Implemented and offline-tested; not live-validated** | Admin-only; registered in `async_setup`; 23 real-HA tests. Supervised HA validation pending |
+| Public HA `start_station`/`stop_irrigation` actions | **Live-validated (2026-10-10)** | Admin-only; registered in `async_setup`; 23 real-HA tests. Idle stop no-op, Station 001 start and stop each verified with exactly one write; disabled Station 008 refused |
 | Manual Program A/B/C start (`0x38`) | Deferred | Command supported, input numbering unverified |
 | Control dashboard | Planned | Status, zone selection, duration, start/stop, programs; mobile/desktop |
-| Published release / upstream submission | Not done | No release or repo publication; nothing committed for Phase 2A–2C yet |
+| Published release / upstream submission | Not done | Phase 2A–2C committed locally (no remotes); no release |
 
 ## Current test evidence (re-run 2026-10-10)
 
@@ -63,6 +63,4 @@ The repository inspection found the following differences between the documented
 
 ## Immediate next gate
 
-1. Operator-supervised validation of the HA actions (procedure in [CONTROL_SAFETY.md](operations/CONTROL_SAFETY.md#supervised-ha-action-validation)), recorded with the live validation log template.
-2. Review the Phase 2A–2C diffs and commit each repository separately when the user requests it.
-3. Then Phase 2D dashboard.
+Phase 2C is accepted. Next: Phase 2D dashboard ([roadmap](development/IMPLEMENTATION_ROADMAP.md#phase-2d--dashboardui-next)). Return HA debug logging to info/warning once no longer needed.
