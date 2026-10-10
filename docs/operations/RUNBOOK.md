@@ -53,6 +53,10 @@ Check realtime coordinator **without** `_slow` suffix: `rainbird_iq4_200001_loca
 | `write_outcome_ambiguous` | Command may have executed. **Do not retry**; inspect physically, stop via app if needed |
 | `controller_unreachable` | Nothing was sent; check controller network reachability |
 
+## Cloud password changed or rejected
+
+If IQ4 rejects the stored cloud credentials, HA shows **Re-authenticate** for the Rain Bird IQ4 entry (Settings → Devices & services, or the repairs/notifications area). Enter the current IQ4 cloud password; the integration checks that the account can still see the configured controller, then reloads. Until then cloud data is unavailable and `start_station` is refused with `cloud_data_unavailable`; `stop_irrigation` keeps working locally.
+
 ## HA sensor unavailable investigation
 
 1. Check Developer Tools → States for `sensor.backyard_irrigation_state` and attributes, including timestamp and `consecutive_failures`.

@@ -2,6 +2,13 @@
 
 This is a **reported milestone history**, not a Git commit history. Exact dates for some intermediate milestones were not recorded; all milestones predate or occurred on 2026-10-10.
 
+## 2026-10-10 — Integration hardening (Phase 4 start)
+
+- **Fixed:** IQ4 rejecting the stored cloud password raised `ConfigEntryAuthFailed`, but the config flow had no `reauth` step, so the re-authentication prompt could not complete. Added `reauth`/`reauth_confirm` (asks for the new password, checks the account still has the controller, updates the entry and reloads).
+- Config flow now uses Home Assistant's shared HTTP session.
+- Config, reauth and options flows are tested against real HA (`tests_ha/test_config_flow.py`, 18 tests, including the end-to-end reauth trigger and the duplicate-controller abort the stubs could not test). Six superseded stub flow tests removed.
+- Results: library 105; integration stub suite 73; real-HA suite 53.
+
 ## 2026-10-10 — Phase 2D started
 
 - Added `select` "Start station" (cloud-enabled stations only, stored by station ID, restored) and `number` "Start duration" (1–30 min, default 5, restored) entities, created only with local control configured. Neither contacts the controller.

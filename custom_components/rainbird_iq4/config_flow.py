@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import selector
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pyrainbird_iq4.cloud.auth import authenticate
 from pyrainbird_iq4.cloud.client import RainBirdIQ4CloudClient
 from pyrainbird_iq4.exceptions import (
@@ -50,10 +53,12 @@ def _preferred_controller_order(controllers: list[Any], statuses: dict[int, Any]
     )
 
 
-async def validate_input(username: str, password: str) -> tuple[list[Any], dict[int, Any]]:
+async def validate_input(
+    hass: HomeAssistant, username: str, password: str
+) -> tuple[list[Any], dict[int, Any]]:
     """Validate user credentials and return discovered controllers."""
     token = await authenticate(username, password)
-    client = RainBirdIQ4CloudClient(token)
+    client = RainBirdIQ4CloudClient(token, session=async_get_clientsession(hass))
     controllers = await client.get_controllers()
     status_response = await client.get_connection_statuses(
         [controller.id for controller in controllers]
@@ -88,7 +93,9 @@ class RainBirdIQ4ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
             self._username = user_input[CONF_USERNAME]
             self._password = user_input[CONF_PASSWORD]
             try:
-                controllers, statuses = await validate_input(self._username, self._password)
+                controllers, statuses = await validate_input(
+                    self.hass, self._username, self._password
+                )
             except RainBirdIQ4CredentialsError:
                 errors["base"] = "invalid_auth"
             except (
@@ -148,6 +155,51 @@ class RainBirdIQ4ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: 
             data_schema=vol.Schema(
                 {vol.Required(CONF_CONTROLLER_ID, default=default_controller_id): vol.In(choices)}
             ),
+            errors=errors,
+        )
+
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
+        """Start reauthentication after IQ4 rejects the stored credentials."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for the new IQ4 password and confirm it still reaches this controller."""
+        entry = self._get_reauth_entry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                controllers, _ = await validate_input(
+                    self.hass, entry.data[CONF_USERNAME], user_input[CONF_PASSWORD]
+                )
+            except RainBirdIQ4CredentialsError:
+                errors["base"] = "invalid_auth"
+            except (
+                RainBirdIQ4WAFChallengeError,
+                RainBirdIQ4AuthenticationError,
+                RainBirdIQ4ConnectionError,
+            ):
+                errors["base"] = "cannot_connect"
+            except Exception:
+                _LOGGER.exception("Unexpected exception while reauthenticating Rain Bird IQ4")
+                errors["base"] = "unknown"
+            else:
+                if any(item.id == entry.data[CONF_CONTROLLER_ID] for item in controllers):
+                    return self.async_update_reload_and_abort(
+                        entry, data_updates={CONF_PASSWORD: user_input[CONF_PASSWORD]}
+                    )
+                errors["base"] = "controller_not_found"
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_PASSWORD): selector.TextSelector(
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+                    )
+                }
+            ),
+            description_placeholders={"username": entry.data[CONF_USERNAME]},
             errors=errors,
         )
 

@@ -13,16 +13,25 @@
         "data": {
           "controller_id": "Controller"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with Rain Bird IQ4",
+        "description": "IQ4 rejected the stored password for {username}. Enter the current IQ4 cloud password.",
+        "data": {
+          "password": "Password"
+        }
       }
     },
     "error": {
       "invalid_auth": "Authentication failed",
       "cannot_connect": "Failed to connect",
-      "unknown": "Unexpected error"
+      "unknown": "Unexpected error",
+      "controller_not_found": "This account no longer has access to the configured controller"
     },
     "abort": {
       "already_configured": "Controller already configured",
-      "no_controllers": "No IQ4 controllers were found for this account"
+      "no_controllers": "No IQ4 controllers were found for this account",
+      "reauth_successful": "Re-authentication was successful"
     }
   },
   "options": {

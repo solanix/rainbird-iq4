@@ -1,9 +1,8 @@
-"""Tests for the Rain Bird IQ4 config flow."""
+"""Tests for config-flow helpers; the flows themselves are tested in tests_ha."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, time
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from pyrainbird_iq4.cloud.models import (
@@ -12,21 +11,8 @@ from pyrainbird_iq4.cloud.models import (
     ScheduledProgram,
     ScheduledTime,
 )
-from pyrainbird_iq4.exceptions import (
-    RainBirdIQ4ConnectionError,
-    RainBirdIQ4CredentialsError,
-)
 
-from custom_components.rainbird_iq4.config_flow import (
-    RainBirdIQ4ConfigFlow,
-    RainBirdIQ4OptionsFlow,
-    _preferred_controller_order,
-)
-from custom_components.rainbird_iq4.const import (
-    CONF_LOCAL_HOST,
-    CONF_LOCAL_PASSWORD,
-    DOMAIN,
-)
+from custom_components.rainbird_iq4.config_flow import _preferred_controller_order
 
 
 @pytest.fixture
@@ -73,84 +59,6 @@ def controller_b() -> Controller:
     )
 
 
-async def test_successful_config_flow(hass, controller_a):
-    """User can authenticate, discover a controller, and create an entry."""
-    with patch(
-        "custom_components.rainbird_iq4.config_flow.validate_input",
-        AsyncMock(
-            return_value=(
-                [controller_a],
-                {
-                    controller_a.id: ConnectionStatus(
-                        controller_a.id,
-                        True,
-                        "2024-01-01T00:00:00Z",
-                    )
-                },
-            )
-        ),
-    ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": "user"},
-            data={"username": "user", "password": "pass"},
-        )
-
-    assert result["type"] == "create_entry"
-    assert result["title"] == "West Yard (Home)"
-    assert result["data"]["controller_id"] == controller_a.id
-    assert "username" in result["data"]
-    assert "password" in result["data"]
-
-
-async def test_bad_authentication(hass):
-    """Authentication errors map to invalid_auth."""
-    with patch(
-        "custom_components.rainbird_iq4.config_flow.validate_input",
-        AsyncMock(side_effect=RainBirdIQ4CredentialsError("bad auth")),
-    ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": "user"},
-            data={"username": "bad", "password": "bad"},
-        )
-
-    assert result["type"] == "form"
-    assert result["errors"]["base"] == "invalid_auth"
-
-
-async def test_connection_failure(hass):
-    """Connection errors map to cannot_connect."""
-    with patch(
-        "custom_components.rainbird_iq4.config_flow.validate_input",
-        AsyncMock(side_effect=RainBirdIQ4ConnectionError("offline")),
-    ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": "user"},
-            data={"username": "user", "password": "pass"},
-        )
-
-    assert result["type"] == "form"
-    assert result["errors"]["base"] == "cannot_connect"
-
-
-async def test_multiple_controller_selection(controller_a, controller_b, hass):
-    """Multiple controllers present a selection form."""
-    flow = RainBirdIQ4ConfigFlow()
-    flow.hass = hass
-    flow._controllers = [controller_a, controller_b]
-    flow._statuses = {
-        controller_a.id: ConnectionStatus(controller_a.id, True, "2024-01-01T00:00:00Z"),
-        controller_b.id: ConnectionStatus(controller_b.id, False, "2024-01-01T00:00:00Z"),
-    }
-
-    result = await flow.async_step_select_controller()
-
-    assert result["type"] == "form"
-    assert result["step_id"] == "select_controller"
-
-
 async def test_connected_controller_preference(controller_a, controller_b):
     """Connected controllers are prioritized in selection ordering."""
     controllers = [controller_a, controller_b]
@@ -193,43 +101,3 @@ def test_disconnected_stale_controller_handling():
     status = ConnectionStatus(1, False, "2024-01-01T00:00:00Z")
     assert _is_stale(status, now=datetime(2024, 1, 1, 0, 10, tzinfo=UTC)) is False
     assert _is_stale(status, now=datetime(2024, 1, 1, 0, 16, tzinfo=UTC)) is True
-
-
-async def test_local_options_preserve_pin_and_can_disable_polling() -> None:
-    """Editing the LAN host need not redisclose the stored controller PIN."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "options": {
-                CONF_LOCAL_HOST: "192.0.2.10",
-                CONF_LOCAL_PASSWORD: "stored-pin",
-            }
-        },
-    )()
-    flow = RainBirdIQ4OptionsFlow(entry)
-
-    updated = await flow.async_step_init(
-        {CONF_LOCAL_HOST: "backyard.local", CONF_LOCAL_PASSWORD: ""}
-    )
-    disabled = await flow.async_step_init({CONF_LOCAL_HOST: "", CONF_LOCAL_PASSWORD: ""})
-
-    assert updated["data"] == {
-        CONF_LOCAL_HOST: "backyard.local",
-        CONF_LOCAL_PASSWORD: "stored-pin",
-    }
-    assert disabled["data"] == {}
-
-
-async def test_local_options_reject_host_without_pin() -> None:
-    """Local polling cannot be silently configured without authentication."""
-    entry = type("Entry", (), {"options": {}})()
-    flow = RainBirdIQ4OptionsFlow(entry)
-
-    result = await flow.async_step_init(
-        {CONF_LOCAL_HOST: "backyard.local", CONF_LOCAL_PASSWORD: ""}
-    )
-
-    assert result["type"] == "form"
-    assert result["errors"] is not None
-    assert result["errors"]["base"] == "local_credentials_required"
