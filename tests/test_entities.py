@@ -396,22 +396,18 @@ def test_effective_program_entities_expose_schedule_and_station_runtimes() -> No
     assert all(entity.extra_state_attributes["program_name"] != "C" for entity in entities)
 
 
-def test_program_entity_survives_effective_catalog_removal_and_return() -> None:
-    """An existing Program B entity becomes unavailable and later recovers."""
+def test_program_entity_tracks_schedule_assignment_and_removal() -> None:
+    """Program B reads Not scheduled while still assigned, unavailable once gone, then recovers."""
     coordinator = _make_entity_coordinator()
-    program_b = coordinator.data.effective_programs[1]
+    scheduled = coordinator.data
+    program_b = scheduled.effective_programs[1]
     entity = ProgramSensor(coordinator, program_b)
     unique_id = entity.unique_id
 
-    coordinator.data = replace(
-        coordinator.data,
-        effective_programs=[coordinator.data.effective_programs[0]],
-    )
+    coordinator.data = replace(scheduled, effective_programs=[scheduled.effective_programs[0]])
 
-    assert entity.available is False
-    assert entity.native_value is None
-    assert entity.unique_id == unique_id
-    assert entity.extra_state_attributes["program_id"] == 4000002
+    assert entity.available is True
+    assert entity.native_value == "Not scheduled"
     assert entity.extra_state_attributes["program_name"] == "Program B"
     assert entity.extra_state_attributes["effective"] is False
     assert entity.extra_state_attributes["scheduled"] is False
@@ -419,12 +415,52 @@ def test_program_entity_survives_effective_catalog_removal_and_return() -> None:
 
     coordinator.data = replace(
         coordinator.data,
-        effective_programs=[coordinator.data.effective_programs[0], program_b],
+        runtime_assignments=[
+            runtime
+            for runtime in scheduled.runtime_assignments
+            if all(assignment.program_id != 4000002 for assignment in runtime.assignments)
+        ],
     )
+
+    assert entity.available is False
+    assert entity.native_value is None
+    assert entity.unique_id == unique_id
+    assert entity.extra_state_attributes["program_name"] == "Program B"
+
+    coordinator.data = scheduled
 
     assert entity.available is True
     assert entity.native_value == "19:40"
-    assert entity.unique_id == unique_id
+    assert entity.extra_state_attributes["effective"] is True
+
+
+def test_unscheduled_program_c_gets_not_scheduled_entity() -> None:
+    """Program C, only assigned to a station, is a real program that is not effective."""
+    coordinator = _make_entity_coordinator()
+    program_c = next(
+        program for program in coordinator.data.known_programs if program["id"] == 9999999
+    )
+
+    entity = ProgramSensor(coordinator, program_c)
+
+    assert program_c["name"] == "Program C"
+    assert all(program["id"] != 9999999 for program in coordinator.data.effective_programs)
+    assert entity.unique_id == "42_program_9999999"
+    assert entity.available is True
+    assert entity.native_value == "Not scheduled"
+    assert entity.extra_state_attributes["effective"] is False
+    assert entity.extra_state_attributes["scheduled"] is False
+    assert entity.extra_state_attributes["station_runtimes"] == [
+        {
+            "station_id": 101,
+            "station_name": "Front lawn",
+            "station_enabled": True,
+            "terminal": 1,
+            "terminal_number": 1,
+            "adjusted_runtime": "00:03:00",
+            "base_runtime": "00:03:00",
+        }
+    ]
 
 
 def test_program_entity_supports_present_program_without_start_time() -> None:
@@ -594,6 +630,21 @@ def test_idle_local_entities_preserve_enabled_semantics() -> None:
     assert active_station.extra_state_attributes["terminal_number"] is None
     assert queue_remaining.native_value == 0
     assert rain_delay.native_value == 3
+
+
+def test_irrigation_enabled_exposes_physically_available_terminals() -> None:
+    """Dashboards read terminal presence from the slow poll; unknown stays None."""
+    cloud = _make_entity_coordinator()
+    local = _local_entity_coordinator(state=_local_state())
+    enabled = IrrigationEnabledBinarySensor(local, cloud)
+
+    assert enabled.extra_state_attributes["available_terminals"] == [1, 3, 10]
+
+    local.data = replace(_local_state(), available_terminals=None)
+    assert enabled.extra_state_attributes["available_terminals"] is None
+
+    local.data = None
+    assert enabled.extra_state_attributes["available_terminals"] is None
 
 
 def test_all_realtime_entities_are_built_when_local_is_configured() -> None:

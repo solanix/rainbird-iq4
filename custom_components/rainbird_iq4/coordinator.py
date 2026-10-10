@@ -152,6 +152,34 @@ class RainBirdIQ4Data:
         """Return stations without a verified enabled state."""
         return [station for station in self.stations if station.is_enabled is None]
 
+    @property
+    def known_programs(self) -> list[dict[str, Any]]:
+        """Return effective programs plus unscheduled programs still assigned to stations.
+
+        Referenced-only programs are real controller configuration, not effective schedules.
+        """
+        known = list(self.effective_programs)
+        seen = {program["id"] for program in known}
+        for runtime in self.runtime_assignments:
+            for assignment in runtime.assignments:
+                if assignment.program_id in seen:
+                    continue
+                seen.add(assignment.program_id)
+                short_name = assignment.program_short_name.strip()
+                known.append(
+                    {
+                        "source": "reference",
+                        "id": assignment.program_id,
+                        "name": (
+                            short_name
+                            if short_name.casefold().startswith("program")
+                            else f"Program {short_name or assignment.program_id}"
+                        ),
+                        "scheduled_times": [],
+                    }
+                )
+        return known
+
 
 AUTH_BACKOFF_INITIAL_SECONDS = 5 * 60
 AUTH_BACKOFF_MAX_SECONDS = 60 * 60

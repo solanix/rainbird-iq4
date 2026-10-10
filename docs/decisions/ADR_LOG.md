@@ -27,8 +27,8 @@
 
 ## ADR-006 — Distinguish program references from effective assignments
 **Status:** Accepted.  
-**Decision:** Preserve unscheduled Program C reference but keep effective count 0.  
-**Reason:** A configured program without scheduled starts is real and must not be mislabeled stale or treated as effective watering schedule.
+**Decision:** Preserve unscheduled Program C reference but keep effective count 0. *Revised 2026-10-10:* every program that is scheduled **or** still assigned to a station gets a program entity; unscheduled ones read `Not scheduled` with `effective: false`. A program entity becomes unavailable only when the program is gone from both.  
+**Reason:** A configured program without scheduled starts is real and must not be mislabeled stale or treated as effective watering schedule. Building program entities only from scheduled programs left Program B as an orphaned `unavailable` entity after a restart and gave Program C no entity at all.
 
 ## ADR-007 — Exactly-one write; bounded read-only verification
 **Status:** Accepted; start live-validated; stop verifier extended 2026-10-10.  

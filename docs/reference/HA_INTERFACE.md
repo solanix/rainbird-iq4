@@ -10,7 +10,8 @@ Reported Backyard entities include:
 - Realtime data: active program, active station, queue remaining zones, remaining runtime.
 - Slow data: irrigation enabled, rain sensor, rain delay, available terminal count/list.
 - Station metadata sensor, e.g. `sensor.backyard_station_001` — numeric state is **effective program count**, not enablement; attributes include `station_enabled`, IDs, terminal, references. The cloud **station ID** needed by `start_station` is shown here.
-- Program and program-start metadata entities; effective program count.
+- Program entities (`sensor.backyard_program_a`, `_b`, `_c`, …): one per program that is scheduled or assigned to a station. State is the first start time, or `Not scheduled`; attribute `effective` is true only for scheduled programs. Unavailable only when the program no longer exists in schedules or assignments.
+- Effective program count.
 - Manual-start controls (only when local control is configured):
   - `select.backyard_start_station` — options are **only** cloud-enabled stations, by IQ4 name (duplicate names get a ` (terminal N)` suffix). Attribute `station_id` holds the stable cloud ID of the choice. The choice is stored by station ID, restored across restarts, and cleared if that station stops being enabled.
   - `number.backyard_start_duration` — 1–30 minutes, slider, default 5, restored across restarts; stays available during cloud outages.

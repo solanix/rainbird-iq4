@@ -52,7 +52,7 @@ def _build_entities(
             for station in coordinator.data.stations
             for assignment in StationSensor(coordinator, station)._program_references
         ),
-        *(ProgramSensor(coordinator, program) for program in coordinator.data.effective_programs),
+        *(ProgramSensor(coordinator, program) for program in coordinator.data.known_programs),
     ]
     if local_coordinator is not None:
         entities.extend(
@@ -691,7 +691,7 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
 
 
 class ProgramSensor(RainBirdIQ4Entity, SensorEntity):
-    """Expose an effective schedule-derived MQTT program."""
+    """Expose a controller program, scheduled or merely assigned to stations."""
 
     _attr_icon = "mdi:calendar-clock"
 
@@ -703,19 +703,26 @@ class ProgramSensor(RainBirdIQ4Entity, SensorEntity):
 
     @property
     def _program(self) -> dict[str, Any] | None:
-        """Return the effective program from the latest cloud snapshot."""
+        """Return the program from the latest cloud snapshot."""
         return next(
             (
                 program
-                for program in self.coordinator.data.effective_programs
+                for program in self.coordinator.data.known_programs
                 if program["id"] == self._program_id
             ),
             None,
         )
 
     @property
+    def _effective(self) -> bool:
+        return any(
+            program["id"] == self._program_id
+            for program in self.coordinator.data.effective_programs
+        )
+
+    @property
     def available(self) -> bool:
-        """Return whether the program is currently in the effective catalog."""
+        """Return whether the program is still scheduled or assigned to a station."""
         return bool(super().available and self._program is not None)
 
     @property
@@ -755,7 +762,7 @@ class ProgramSensor(RainBirdIQ4Entity, SensorEntity):
             {
                 "program_id": self._program_id,
                 "program_name": program["name"] if program is not None else self._program_name,
-                "effective": program is not None,
+                "effective": self._effective,
                 "scheduled": bool(program and program.get("scheduled_times")),
                 "scheduled_start_times": [
                     start["time_of_day"][:5]

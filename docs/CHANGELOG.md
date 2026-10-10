@@ -10,7 +10,8 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Added a diagnostics download (Settings → Devices & services → Rain Bird IQ4 → ⋮ → Download diagnostics): coordinator health and latest cloud/local data, with username, passwords, local host/PIN, MAC, location and site name redacted; stations show the derived `is_enabled` next to raw `is_locked`. Snapshot-tested.
 - Added concurrency tests: a start issued mid-poll waits for the poll, and a stop sent while a start is writing runs after it; no deadlock.
 - Fixed entity names now come from `strings.json` (`translation_key`); station and program entities keep their IQ4-derived names. A snapshot of every entity ID and name confirms nothing changed for existing setups or dashboards.
-- Results: library 105; integration stub suite 73; real-HA suite 57.
+- **Program entities for unscheduled programs.** A program still assigned to stations but without a start time (live: Program B, Program C) now has an entity reading `Not scheduled` with `effective: false`; it goes unavailable only once it disappears from both the schedule and the station assignments. Previously such programs had no entity after a restart, so Program B showed as an orphaned `unavailable` registry entry. New entity: `sensor.<controller>_program_c`.
+- Results: library 105; integration stub suite 75; real-HA suite 58.
 
 ## 2026-10-10 — Phase 2D started
 
