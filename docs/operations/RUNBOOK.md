@@ -102,4 +102,4 @@ A standard custom-integration warning ('not tested by Home Assistant') is not ev
 
 ## Incident capture checklist
 
-Capture timestamps, HA version, entry/controller ID, affected entity ID and attributes, relevant local realtime and slow logs, any action call with its response or error key, HA config logger level, OS/container disk metrics and whether app/HA/standalone diagnostic were concurrently connected. Redact credentials and internal/private addresses before public reporting.
+Start with **Download diagnostics** on the Rain Bird IQ4 entry (credentials, local address, MAC, location and site name are redacted). Capture timestamps, HA version, entry/controller ID, affected entity ID and attributes, relevant local realtime and slow logs, any action call with its response or error key, HA config logger level, OS/container disk metrics and whether app/HA/standalone diagnostic were concurrently connected. Redact credentials and internal/private addresses before public reporting.

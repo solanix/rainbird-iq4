@@ -1,0 +1,160 @@
+# serializer version: 1
+# name: test_diagnostics_are_redacted
+  dict({
+    'cloud': dict({
+      'consecutive_failures': None,
+      'data': dict({
+        'connected': True,
+        'connection_status': None,
+        'controller': dict({
+          'id': 200001,
+          'is_mqtt': True,
+          'is_shutdown': False,
+          'latitude': '**REDACTED**',
+          'longitude': '**REDACTED**',
+          'mac_address': '**REDACTED**',
+          'name': 'Controller 200001',
+          'programs_used_count': 0,
+          'rain_delay': 0,
+          'satellite_enabled': True,
+          'simultaneous_stations': 1,
+          'site_id': 1,
+          'site_name': '**REDACTED**',
+          'station_count': 3,
+          'type': 57,
+          'version': '3.11.0',
+        }),
+        'effective_programs': list([
+        ]),
+        'programs': list([
+        ]),
+        'runtime_assignments': list([
+        ]),
+        'scheduled_programs': list([
+        ]),
+        'stale': False,
+        'stations': list([
+          dict({
+            'controller_id': 200001,
+            'id': 30000001,
+            'is_enabled': True,
+            'is_locked': True,
+            'name': 'Station 001',
+            'terminal': 1,
+          }),
+          dict({
+            'controller_id': 200001,
+            'id': 30000008,
+            'is_enabled': False,
+            'is_locked': False,
+            'name': 'Station 008',
+            'terminal': 8,
+          }),
+          dict({
+            'controller_id': 200001,
+            'id': 30000009,
+            'is_enabled': None,
+            'is_locked': None,
+            'name': 'Station 009',
+            'terminal': 9,
+          }),
+        ]),
+      }),
+      'last_successful_update': None,
+      'last_update_success': True,
+      'update_interval_seconds': 300.0,
+    }),
+    'entry': dict({
+      'data': dict({
+        'controller_id': 200001,
+        'password': '**REDACTED**',
+        'username': '**REDACTED**',
+      }),
+      'options': dict({
+        'local_host': '**REDACTED**',
+        'local_password': '**REDACTED**',
+      }),
+    }),
+    'local_realtime': dict({
+      'consecutive_failures': 0,
+      'data': dict({
+        'active_terminals': list([
+        ]),
+        'available_terminals': list([
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+        ]),
+        'failed_commands': list([
+        ]),
+        'irrigation_enabled': True,
+        'queue': dict({
+          'current': dict({
+            'active': None,
+            'program_code': 0,
+            'running': False,
+            'seconds': None,
+            'terminal': None,
+            'zones_remaining': 0,
+          }),
+          'zones': list([
+          ]),
+        }),
+        'rain_delay_days': 0,
+        'rain_sensor_active': False,
+        'transport_failure': False,
+      }),
+      'derived_state': 'idle',
+      'last_successful_update': '2026-10-10T02:00:00+00:00',
+      'last_update_success': True,
+      'update_interval_seconds': 30.0,
+    }),
+    'local_slow': dict({
+      'consecutive_failures': 0,
+      'data': dict({
+        'active_terminals': list([
+        ]),
+        'available_terminals': list([
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+        ]),
+        'failed_commands': list([
+        ]),
+        'irrigation_enabled': True,
+        'queue': dict({
+          'current': dict({
+            'active': None,
+            'program_code': 0,
+            'running': False,
+            'seconds': None,
+            'terminal': None,
+            'zones_remaining': 0,
+          }),
+          'zones': list([
+          ]),
+        }),
+        'rain_delay_days': 0,
+        'rain_sensor_active': False,
+        'transport_failure': False,
+      }),
+      'last_successful_update': '2026-10-10T02:00:00+00:00',
+      'last_update_success': True,
+      'update_interval_seconds': 300.0,
+    }),
+  })
+# ---

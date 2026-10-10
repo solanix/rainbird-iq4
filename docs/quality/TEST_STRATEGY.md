@@ -23,7 +23,7 @@
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | 105 passed | Passed | Passed | Passed (strict) |
 | `ha-rainbird-iq4` stub | 73 passed | Passed | Passed | Passed |
-| `ha-rainbird-iq4` real HA | 53 passed | Passed | Passed | — |
+| `ha-rainbird-iq4` real HA | 54 passed | Passed | Passed | — |
 
 ## Regression coverage
 
