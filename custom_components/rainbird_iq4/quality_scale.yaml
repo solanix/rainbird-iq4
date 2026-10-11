@@ -50,8 +50,8 @@ rules:
   docs-installation-parameters: todo
   entity-unavailable: done
   integration-owner:
-    status: todo
-    comment: manifest codeowners is empty.
+    status: done
+    comment: "@solanix"
   log-when-unavailable:
     status: done
     comment: DataUpdateCoordinator logs once on failure and recovery.
