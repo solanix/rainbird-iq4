@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -854,6 +854,111 @@ async def test_slow_transient_failure_retries_once(hass, controller) -> None:
     assert slow.data is complete
     assert slow.data.failed_commands == frozenset()
     assert client.get_slow_state.await_count == 2
+
+
+@pytest.mark.usefixtures("local_grace")
+async def test_brief_realtime_outage_keeps_last_snapshot(hass, controller) -> None:
+    """Within the grace period a failed poll keeps the last good data, still aging."""
+    coordinator = RainBirdIQ4LocalCoordinator(hass, _local_entry(controller))
+    good = _local_state()
+    client = type(
+        "Local",
+        (),
+        {
+            "get_realtime_state": AsyncMock(
+                side_effect=[
+                    good,
+                    RainbirdConnectionError("refused"),
+                    RainbirdConnectionError("refused"),
+                    _partial_realtime_state(),
+                    _partial_realtime_state(),
+                ]
+            )
+        },
+    )()
+
+    with patch(
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
+        AsyncMock(return_value=client),
+    ):
+        await coordinator.async_refresh()
+        fresh_at = coordinator.last_successful_update
+        await coordinator.async_refresh()
+        assert coordinator.data is good
+        assert coordinator.last_update_success is True
+        await coordinator.async_refresh()
+
+    assert coordinator.data is good
+    assert coordinator.last_update_success is True
+    assert coordinator.last_successful_update == fresh_at
+    assert coordinator.consecutive_failures == 2
+    assert _poll_interval_seconds(coordinator) == 60
+
+
+@pytest.mark.usefixtures("local_grace")
+async def test_realtime_outage_beyond_grace_fails(hass, controller) -> None:
+    """Once the last good data is older than the grace period, the poll fails."""
+    coordinator = RainBirdIQ4LocalCoordinator(hass, _local_entry(controller))
+    client = type(
+        "Local",
+        (),
+        {
+            "get_realtime_state": AsyncMock(
+                side_effect=[
+                    _local_state(),
+                    RainbirdConnectionError("refused"),
+                    RainbirdConnectionError("refused"),
+                ]
+            )
+        },
+    )()
+
+    with patch(
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
+        AsyncMock(return_value=client),
+    ):
+        await coordinator.async_refresh()
+        coordinator.last_successful_update = datetime.now(UTC) - timedelta(seconds=91)
+        await coordinator.async_refresh()
+
+    assert coordinator.last_update_success is False
+
+
+@pytest.mark.usefixtures("local_grace")
+async def test_slow_failure_within_grace_keeps_values_available(hass, controller) -> None:
+    """A recently read rain delay stays usable; one never read stays failed."""
+    entry = _local_entry(controller)
+    slow = RainBirdIQ4LocalSlowCoordinator(hass, entry, RainBirdIQ4LocalConnection(hass, entry))
+    first = LocalIrrigationState(
+        True, (), (1, 2), None, 0, failed_commands=frozenset({"rain_sensor"})
+    )
+    partial = LocalIrrigationState(
+        True,
+        (),
+        (1, 2),
+        None,
+        None,
+        failed_commands=frozenset({"rain_sensor", "rain_delay"}),
+        transport_failure=True,
+    )
+    client = type(
+        "Local",
+        (),
+        {"get_slow_state": AsyncMock(side_effect=[first, partial, partial, OSError("down")])},
+    )()
+
+    with patch(
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
+        AsyncMock(return_value=client),
+    ):
+        await slow.async_refresh()
+        await slow.async_refresh()
+        assert slow.data.rain_delay_days == 0
+        assert slow.data.failed_commands == frozenset({"rain_sensor"})
+        await slow.async_refresh()
+
+    assert slow.last_update_success is True
+    assert slow.data.rain_delay_days == 0
 
 
 async def test_partial_realtime_poll_does_not_refresh_age(hass, controller) -> None:

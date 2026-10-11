@@ -114,3 +114,10 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 
 - The Rain Bird IQ4 card (`dashboard/`) is bundled into `custom_components/rainbird_iq4/frontend/` and loaded on every dashboard at startup (`card.py`, `add_extra_js_url`), with a content hash in the URL for cache busting. No resource registration or `www/` copy is needed; `dashboard/scripts/install-dev.sh` is removed. The manifest now depends on `frontend` and `http`.
 - A card test fails if the committed bundle is stale; a real-HA test checks the card is served and registered.
+
+## 2026-10-11 — Local polling rides out brief controller outages
+
+- The controller's local port is occasionally held by another IQ4 client (the Rain Bird app via the cloud) for roughly 2–30 seconds; about 1–2% of polls failed, each one making local entities unavailable.
+- A failed realtime or slow snapshot is retried once after 2 seconds on the same client before the client is reset.
+- A failed realtime poll keeps the last good snapshot for up to 90 seconds; slow values (rain delay, rain sensor, irrigation enabled, available terminals) stay usable for 15 minutes after their last successful read. `last_successful_update` keeps aging, so the card shows the data as stale after 60 seconds, and `start_station` still re-reads everything before writing.
+- A partial poll no longer advances `last_successful_update`.

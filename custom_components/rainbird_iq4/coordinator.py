@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from asyncio import gather
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from time import monotonic
 from typing import Any
@@ -41,12 +42,16 @@ from .const import (
     DOMAIN,
     LOCAL_FAILURE_BACKOFF_INTERVALS,
     LOCAL_IDLE_UPDATE_INTERVAL,
+    LOCAL_REALTIME_GRACE,
     LOCAL_RUNNING_UPDATE_INTERVAL,
+    LOCAL_SLOW_GRACE,
     LOCAL_SLOW_UPDATE_INTERVAL,
 )
 from .models import RainBirdIQ4Data, build_effective_programs, is_stale
 
 _LOGGER = logging.getLogger(__name__)
+# Reads that decide whether irrigation is running; without them a snapshot is not fresh.
+_RUN_STATE_COMMANDS = frozenset({"active_terminals", "current_queue_page_0"})
 
 
 AUTH_BACKOFF_INITIAL_SECONDS = 5 * 60
@@ -280,6 +285,8 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
                 type(err).__name__,
                 int(interval.total_seconds()),
             )
+            if (previous := self._previous_within_grace()) is not None:
+                return previous
             raise UpdateFailed(
                 translation_domain=DOMAIN,
                 translation_key="local_update_failed",
@@ -293,6 +300,10 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
                 self.controller_id,
                 int(interval.total_seconds()),
             )
+            if state.failed_commands & _RUN_STATE_COMMANDS and (
+                previous := self._previous_within_grace()
+            ):
+                return previous
         else:
             self.consecutive_failures = 0
             interval = (
@@ -307,9 +318,25 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
                 int(interval.total_seconds()),
             )
         # Freshness means the run-state reads succeeded; a partial poll must not reset age.
-        if not state.failed_commands & {"active_terminals", "current_queue_page_0"}:
+        if not state.failed_commands & _RUN_STATE_COMMANDS:
             self.last_successful_update = datetime.now(UTC)
         return state
+
+    def _previous_within_grace(self) -> LocalIrrigationState | None:
+        """Return the last good snapshot while a brief outage is within the grace period."""
+        previous: LocalIrrigationState | None = getattr(self, "data", None)
+        if (
+            previous is None
+            or self.last_successful_update is None
+            or datetime.now(UTC) - self.last_successful_update > LOCAL_REALTIME_GRACE
+        ):
+            return None
+        _LOGGER.debug(
+            "Local IQ4 keeping last good snapshot for controller %s (%s seconds old)",
+            self.controller_id,
+            int((datetime.now(UTC) - self.last_successful_update).total_seconds()),
+        )
+        return previous
 
     def _record_local_failure(self) -> timedelta:
         """Advance bounded local backoff and update the polling interval."""
@@ -321,6 +348,11 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
         interval = LOCAL_FAILURE_BACKOFF_INTERVALS[index]
         self.update_interval = interval
         return interval
+
+
+_SLOW_COMMANDS = frozenset(
+    {"irrigation_enabled", "available_terminals", "rain_sensor", "rain_delay"}
+)
 
 
 class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
@@ -338,6 +370,7 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
         self.last_successful_update: datetime | None = None
         self.consecutive_failures = 0
         self._retries = 0
+        self._command_success: dict[str, datetime] = {}
         super().__init__(
             hass,
             _LOGGER,
@@ -353,6 +386,10 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
         except Exception as err:
             self.consecutive_failures += 1
             self._schedule_retry()
+            previous: LocalIrrigationState | None = getattr(self, "data", None)
+            expired = self._expired(_SLOW_COMMANDS)
+            if previous is not None and expired != _SLOW_COMMANDS:
+                return replace(previous, failed_commands=expired, transport_failure=True)
             raise UpdateFailed(
                 translation_domain=DOMAIN,
                 translation_key="local_slow_update_failed",
@@ -364,6 +401,9 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
         else:
             self._retries = 0
             self.update_interval = LOCAL_SLOW_UPDATE_INTERVAL
+        now = datetime.now(UTC)
+        for command in _SLOW_COMMANDS - state.failed_commands:
+            self._command_success[command] = now
         previous = getattr(self, "data", None)
         if previous is not None:
             state = LocalIrrigationState(
@@ -388,12 +428,22 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
                     if "rain_delay" in state.failed_commands
                     else state.rain_delay_days
                 ),
-                failed_commands=state.failed_commands,
+                # A recently read value stays usable through a brief outage.
+                failed_commands=self._expired(state.failed_commands),
                 transport_failure=state.transport_failure,
             )
         self.consecutive_failures = len(state.failed_commands)
         self.last_successful_update = datetime.now(UTC)
         return state
+
+    def _expired(self, commands: frozenset[str]) -> frozenset[str]:
+        """Return the commands with no successful read within the grace period."""
+        now = datetime.now(UTC)
+        return frozenset(
+            command
+            for command in commands
+            if (last := self._command_success.get(command)) is None or now - last > LOCAL_SLOW_GRACE
+        )
 
     def _schedule_retry(self) -> None:
         """Retry sooner than the slow interval after any failure, with bounded backoff."""
