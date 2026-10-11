@@ -104,8 +104,8 @@ rules:
     status: done
     comment: icons.json; connectivity and moisture use device-class icons.
   reconfiguration-flow:
-    status: todo
-    comment: Local host/PIN are changeable via options; no reconfigure step for the cloud account.
+    status: done
+    comment: Reconfigure changes the IQ4 account (must still see the controller); options change local host/PIN.
   repair-issues:
     status: exempt
     comment: No user-actionable repair situations identified yet.

@@ -30,6 +30,18 @@
         "data_description": {
           "password": "The current password for this Rain Bird IQ4 cloud account."
         }
+      },
+      "reconfigure": {
+        "title": "Change Rain Bird IQ4 account",
+        "description": "Update the IQ4 cloud account used for this controller. The new account must have access to the same controller.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "The email address or username you use to sign in to the Rain Bird IQ4 cloud.",
+          "password": "The password for that IQ4 cloud account."
+        }
       }
     },
     "error": {
@@ -41,7 +53,8 @@
     "abort": {
       "already_configured": "Controller already configured",
       "no_controllers": "No IQ4 controllers were found for this account",
-      "reauth_successful": "Re-authentication was successful"
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "The account was updated"
     }
   },
   "options": {

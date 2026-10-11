@@ -158,6 +158,63 @@ class RainBirdIQ4ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def _async_validate_account(
+        self, username: str, password: str, controller_id: int
+    ) -> dict[str, str]:
+        """Return form errors unless the credentials reach the configured controller."""
+        try:
+            controllers, _ = await validate_input(self.hass, username, password)
+        except RainBirdIQ4CredentialsError:
+            return {"base": "invalid_auth"}
+        except (
+            RainBirdIQ4WAFChallengeError,
+            RainBirdIQ4AuthenticationError,
+            RainBirdIQ4ConnectionError,
+        ):
+            return {"base": "cannot_connect"}
+        except Exception:
+            _LOGGER.exception("Unexpected exception while validating Rain Bird IQ4 account")
+            return {"base": "unknown"}
+        if not any(item.id == controller_id for item in controllers):
+            return {"base": "controller_not_found"}
+        return {}
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change the IQ4 cloud account used for this controller."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            errors = await self._async_validate_account(
+                user_input[CONF_USERNAME],
+                user_input[CONF_PASSWORD],
+                entry.data[CONF_CONTROLLER_ID],
+            )
+            if not errors:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={
+                        CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    },
+                )
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {
+                        vol.Required(CONF_USERNAME): str,
+                        vol.Required(CONF_PASSWORD): selector.TextSelector(
+                            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+                        ),
+                    }
+                ),
+                {CONF_USERNAME: entry.data[CONF_USERNAME]},
+            ),
+            errors=errors,
+        )
+
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
         """Start reauthentication after IQ4 rejects the stored credentials."""
         return await self.async_step_reauth_confirm()
@@ -169,27 +226,15 @@ class RainBirdIQ4ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         entry = self._get_reauth_entry()
         errors: dict[str, str] = {}
         if user_input is not None:
-            try:
-                controllers, _ = await validate_input(
-                    self.hass, entry.data[CONF_USERNAME], user_input[CONF_PASSWORD]
+            errors = await self._async_validate_account(
+                entry.data[CONF_USERNAME],
+                user_input[CONF_PASSWORD],
+                entry.data[CONF_CONTROLLER_ID],
+            )
+            if not errors:
+                return self.async_update_reload_and_abort(
+                    entry, data_updates={CONF_PASSWORD: user_input[CONF_PASSWORD]}
                 )
-            except RainBirdIQ4CredentialsError:
-                errors["base"] = "invalid_auth"
-            except (
-                RainBirdIQ4WAFChallengeError,
-                RainBirdIQ4AuthenticationError,
-                RainBirdIQ4ConnectionError,
-            ):
-                errors["base"] = "cannot_connect"
-            except Exception:
-                _LOGGER.exception("Unexpected exception while reauthenticating Rain Bird IQ4")
-                errors["base"] = "unknown"
-            else:
-                if any(item.id == entry.data[CONF_CONTROLLER_ID] for item in controllers):
-                    return self.async_update_reload_and_abort(
-                        entry, data_updates={CONF_PASSWORD: user_input[CONF_PASSWORD]}
-                    )
-                errors["base"] = "controller_not_found"
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=vol.Schema(

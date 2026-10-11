@@ -288,3 +288,69 @@ async def test_options_flow_requires_pin_for_new_host(hass: HomeAssistant) -> No
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "local_credentials_required"}
+
+
+@pytest.mark.usefixtures("mock_authenticate")
+async def test_reconfigure_changes_account(hass: HomeAssistant) -> None:
+    """Reconfigure replaces the account credentials and reloads the entry."""
+    entry = await setup_entry(hass, make_entry(BACKYARD_ID))
+
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_USERNAME: "new-user", CONF_PASSWORD: "new-secret"}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data == {
+        CONF_USERNAME: "new-user",
+        CONF_PASSWORD: "new-secret",
+        CONF_CONTROLLER_ID: BACKYARD_ID,
+    }
+    assert entry.state is ConfigEntryState.LOADED
+
+
+@pytest.mark.parametrize(
+    ("error", "controllers", "expected"),
+    [
+        pytest.param(RainBirdIQ4CredentialsError("bad"), None, "invalid_auth", id="credentials"),
+        pytest.param(RainBirdIQ4WAFChallengeError("waf"), None, "cannot_connect", id="waf"),
+        pytest.param(RuntimeError("boom"), None, "unknown", id="unexpected"),
+        pytest.param(None, [controller(OTHER_ID)], "controller_not_found", id="other-account"),
+    ],
+)
+async def test_reconfigure_errors_recover(
+    hass: HomeAssistant,
+    mock_authenticate: AsyncMock,
+    account: dict[str, Any],
+    error: Exception | None,
+    controllers: list[Controller] | None,
+    expected: str,
+) -> None:
+    """Reconfigure errors leave the entry unchanged and a corrected retry succeeds."""
+    entry = await setup_entry(hass, make_entry(BACKYARD_ID))
+    mock_authenticate.side_effect = error
+    if controllers is not None:
+        account["controllers"] = controllers
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_USERNAME: "new-user", CONF_PASSWORD: "new-secret"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": expected}
+    assert entry.data[CONF_USERNAME] == "user"
+
+    mock_authenticate.side_effect = None
+    account["controllers"] = [controller(BACKYARD_ID)]
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_USERNAME: "new-user", CONF_PASSWORD: "new-secret"}
+    )
+    await hass.async_block_till_done()
+
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_USERNAME] == "new-user"

@@ -35,6 +35,7 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 
 - Code owner `@solanix`.
 - Integration code passes `mypy --strict`; `pyproject.toml` now enforces untyped-def and unused-ignore checks for `custom_components`.
+- **Reconfigure** (entry ⋮ → Reconfigure) changes the IQ4 cloud username and password; the new account must still have access to the same controller. Reauth and reconfigure share one account check.
 - `inject-websession` recorded as exempt: the IQ4 login needs an isolated cookie jar and a browser User-Agent; all API traffic already uses HA's session.
 
 ## 2026-10-10 — Phase 2D started

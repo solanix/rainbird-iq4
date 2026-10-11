@@ -61,6 +61,10 @@ If the IQ4 cloud (or its WAF) is unreachable at startup and local control is con
 
 If IQ4 rejects the stored cloud credentials, HA shows **Re-authenticate** for the Rain Bird IQ4 entry (Settings → Devices & services, or the repairs/notifications area). Enter the current IQ4 cloud password; the integration checks that the account can still see the configured controller, then reloads. Until then cloud data is unavailable and `start_station` is refused with `cloud_data_unavailable`; `stop_irrigation` keeps working locally.
 
+## Changing the IQ4 account
+
+Use **Reconfigure** on the Rain Bird IQ4 entry (Settings → Devices & services → Rain Bird IQ4 → ⋮). Enter the new username and password; the account must have access to the same controller, otherwise the form shows *This account no longer has access to the configured controller*. Entities, history and the local options are kept. To move to a different controller, add a new entry instead.
+
 ## HA sensor unavailable investigation
 
 1. Check Developer Tools → States for `sensor.backyard_irrigation_state` and attributes, including timestamp and `consecutive_failures`.
