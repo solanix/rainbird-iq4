@@ -22,7 +22,8 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Icons moved from code to `icons.json` (state icons for irrigation state and irrigation enabled).
 - `PARALLEL_UPDATES = 0` on every platform; help text (`data_description`) on every config, reauth and options field; manifest `iot_class` is now `local_polling`.
 - Entity IDs, names and state values are unchanged (snapshot-verified); presentation is pinned by a new snapshot.
-- Results: library 105; integration stub suite 75; real-HA suite 69.
+- Slow poll also retries after 30/60/120 s when a single command fails (live: `rain_delay` returned a protocol error on the first poll after a restart, leaving Rain delay unavailable for 5 minutes). A clean poll restores the 5-minute interval.
+- Results: library 105; integration stub suite 76; real-HA suite 69.
 
 ## 2026-10-10 — Phase 2D started
 

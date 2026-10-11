@@ -629,6 +629,7 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
         self._connection = connection
         self.last_successful_update: datetime | None = None
         self.consecutive_failures = 0
+        self._retries = 0
         super().__init__(
             hass,
             _LOGGER,
@@ -643,13 +644,14 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
             state = await self._connection.async_get_slow_state()
         except Exception as err:
             self.consecutive_failures += 1
-            # Retry sooner than the slow interval so rain entities do not stay
-            # unavailable for five minutes after a brief connection drop.
-            self.update_interval = LOCAL_FAILURE_BACKOFF_INTERVALS[
-                min(self.consecutive_failures, len(LOCAL_FAILURE_BACKOFF_INTERVALS)) - 1
-            ]
+            self._schedule_retry()
             raise UpdateFailed(f"Local IQ4 slow update failed: {type(err).__name__}") from err
-        self.update_interval = LOCAL_SLOW_UPDATE_INTERVAL
+        # A failed command makes its entity unavailable, so retry it soon too.
+        if state.failed_commands:
+            self._schedule_retry()
+        else:
+            self._retries = 0
+            self.update_interval = LOCAL_SLOW_UPDATE_INTERVAL
         previous = getattr(self, "data", None)
         if previous is not None:
             state = LocalIrrigationState(
@@ -680,3 +682,10 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
         self.consecutive_failures = len(state.failed_commands)
         self.last_successful_update = datetime.now(UTC)
         return state
+
+    def _schedule_retry(self) -> None:
+        """Retry sooner than the slow interval after any failure, with bounded backoff."""
+        self._retries += 1
+        self.update_interval = LOCAL_FAILURE_BACKOFF_INTERVALS[
+            min(self._retries, len(LOCAL_FAILURE_BACKOFF_INTERVALS)) - 1
+        ]

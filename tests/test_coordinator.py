@@ -583,8 +583,7 @@ async def test_slow_partial_failure_preserves_values_and_realtime_state(hass, co
     assert slow.data.failed_commands == frozenset({"rain_delay"})
     assert slow.last_update_success is True
     assert _poll_interval_seconds(realtime) == 10
-    assert slow.update_interval is not None
-    assert slow.update_interval.total_seconds() == 300
+    assert _poll_interval_seconds(slow) == 30
     assert connection.async_get_realtime_state.await_count == 1
     assert connection.async_get_slow_state.await_count == 2
 
@@ -624,6 +623,40 @@ async def test_slow_failure_retries_with_backoff_then_recovers(hass, controller)
 
     assert intervals == [30, 60, 120, 120, 300]
     assert slow.last_update_success is True
+
+
+async def test_slow_partial_failure_retries_soon_then_relaxes(hass, controller) -> None:
+    """A single failed slow command retries within 30 seconds; a clean poll restores 5 minutes."""
+    entry = type(
+        "Entry",
+        (),
+        {
+            "data": {CONF_CONTROLLER_ID: controller.id},
+            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+            "entry_id": "abc",
+        },
+    )()
+    partial = LocalIrrigationState(
+        True, (), (1, 2, 3), False, None, failed_commands=frozenset({"rain_delay"})
+    )
+    connection = type(
+        "Connection",
+        (),
+        {
+            "async_get_slow_state": AsyncMock(
+                side_effect=[partial, partial, LocalIrrigationState(True, (), (1, 2, 3), False, 0)]
+            ),
+        },
+    )()
+    slow = RainBirdIQ4LocalSlowCoordinator(hass, entry, connection)
+
+    intervals = []
+    for _ in range(3):
+        await slow.async_refresh()
+        intervals.append(_poll_interval_seconds(slow))
+
+    assert intervals == [30, 60, 300]
+    assert slow.data.rain_delay_days == 0
 
 
 async def test_overlapping_local_coordinator_refreshes_are_serialized(hass, controller) -> None:
