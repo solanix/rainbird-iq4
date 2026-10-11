@@ -306,7 +306,9 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
                 self.controller_id,
                 int(interval.total_seconds()),
             )
-        self.last_successful_update = datetime.now(UTC)
+        # Freshness means the run-state reads succeeded; a partial poll must not reset age.
+        if not state.failed_commands & {"active_terminals", "current_queue_page_0"}:
+            self.last_successful_update = datetime.now(UTC)
         return state
 
     def _record_local_failure(self) -> timedelta:

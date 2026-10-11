@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -19,7 +20,12 @@ from pyrainbird_iq4.local import (
     RainBirdIQ4LocalClient,
 )
 
-from .const import CONF_CONTROLLER_ID, CONF_LOCAL_HOST, CONF_LOCAL_PASSWORD
+from .const import (
+    CONF_CONTROLLER_ID,
+    CONF_LOCAL_HOST,
+    CONF_LOCAL_PASSWORD,
+    LOCAL_TRANSIENT_RETRY_DELAY,
+)
 from .models import RainBirdIQ4Data
 
 _LOGGER = logging.getLogger(__name__)
@@ -105,17 +111,9 @@ class RainBirdIQ4LocalConnection:
                 self._client = None
 
     async def async_get_realtime_state(self) -> LocalIrrigationState:
-        """Run one realtime snapshot exclusively and reset failed transports."""
+        """Run one realtime snapshot exclusively, retrying a transient failure once."""
         async with self._operation_lock:
-            client = await self.async_get_client()
-            try:
-                state = await client.get_realtime_state()
-            except Exception:
-                await self.async_reset(client)
-                raise
-            if state.transport_failure:
-                await self.async_reset(client)
-            return state
+            return await self._async_read_snapshot(lambda client: client.get_realtime_state())
 
     async def _async_get_control_client(self) -> RainBirdIQ4LocalClient:
         """Connect for a control operation; failure here means nothing was sent."""
@@ -237,14 +235,39 @@ class RainBirdIQ4LocalConnection:
         )
 
     async def async_get_slow_state(self) -> LocalIrrigationState:
-        """Run one slow snapshot exclusively and reset failed transports."""
+        """Run one slow snapshot exclusively, retrying a transient failure once."""
         async with self._operation_lock:
-            client = await self.async_get_client()
-            try:
-                state = await client.get_slow_state()
-            except Exception:
-                await self.async_reset(client)
-                raise
-            if state.transport_failure:
-                await self.async_reset(client)
-            return state
+            return await self._async_read_snapshot(lambda client: client.get_slow_state())
+
+    async def _async_read_snapshot(
+        self, read: Callable[[RainBirdIQ4LocalClient], Awaitable[LocalIrrigationState]]
+    ) -> LocalIrrigationState:
+        """Read once more on the same client before treating a transport failure as real.
+
+        Failures are isolated (another client briefly holds the controller), so a short
+        retry usually succeeds; the client is reset only when the retry fails too.
+        """
+        client = await self.async_get_client()
+        try:
+            state = await read(client)
+        except Exception as err:
+            failure = type(err).__name__
+        else:
+            if not state.transport_failure:
+                return state
+            failure = "partial"
+        _LOGGER.debug(
+            "Local IQ4 transient failure for controller %s (%s); retrying in %s seconds",
+            self._entry.data[CONF_CONTROLLER_ID],
+            failure,
+            int(LOCAL_TRANSIENT_RETRY_DELAY.total_seconds()),
+        )
+        await asyncio.sleep(LOCAL_TRANSIENT_RETRY_DELAY.total_seconds())
+        try:
+            state = await read(client)
+        except Exception:
+            await self.async_reset(client)
+            raise
+        if state.transport_failure:
+            await self.async_reset(client)
+        return state

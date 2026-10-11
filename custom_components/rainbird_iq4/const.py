@@ -22,4 +22,7 @@ LOCAL_FAILURE_BACKOFF_INTERVALS = (
     timedelta(seconds=60),
     timedelta(seconds=120),
 )
+# Another IQ4 client (the Rain Bird app via the cloud) sometimes holds the controller's
+# local port; a refused or timed-out read usually clears within seconds.
+LOCAL_TRANSIENT_RETRY_DELAY = timedelta(seconds=2)
 DISCOVERY_STALE_SECONDS = 900

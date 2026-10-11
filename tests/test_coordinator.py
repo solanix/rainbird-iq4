@@ -740,7 +740,11 @@ async def test_connection_reset_reconnects_once_on_next_poll(hass, controller) -
         (),
         {
             "get_realtime_state": AsyncMock(
-                side_effect=[first_state, RainbirdConnectionError("connection reset")]
+                side_effect=[
+                    first_state,
+                    RainbirdConnectionError("connection reset"),
+                    RainbirdConnectionError("connection reset"),
+                ]
             )
         },
     )()
@@ -765,6 +769,119 @@ async def test_connection_reset_reconnects_once_on_next_poll(hass, controller) -
     assert coordinator.data is recovered_state
     assert coordinator.last_update_success is True
     assert connect.await_count == 2
+
+
+def _local_entry(controller: Controller) -> Any:
+    return type(
+        "Entry",
+        (),
+        {
+            "data": {CONF_CONTROLLER_ID: controller.id},
+            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+            "entry_id": "abc",
+        },
+    )()
+
+
+def _partial_realtime_state() -> LocalIrrigationState:
+    return LocalIrrigationState(
+        irrigation_enabled=None,
+        active_terminals=(),
+        available_terminals=None,
+        rain_sensor_active=None,
+        rain_delay_days=None,
+        failed_commands=frozenset({"active_terminals", "current_queue_page_0"}),
+        transport_failure=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "first_attempt",
+    [
+        pytest.param(RainbirdConnectionError("refused"), id="exception"),
+        pytest.param(_partial_realtime_state(), id="partial-snapshot"),
+    ],
+)
+async def test_transient_local_failure_retries_once_on_same_client(
+    hass, controller, first_attempt: Any
+) -> None:
+    """A single refused read is retried on the same client and the poll succeeds."""
+    coordinator = RainBirdIQ4LocalCoordinator(hass, _local_entry(controller))
+    recovered = _local_state()
+    client = type(
+        "Local",
+        (),
+        {"get_realtime_state": AsyncMock(side_effect=[first_attempt, recovered])},
+    )()
+    connect = AsyncMock(return_value=client)
+
+    with patch(
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
+        connect,
+    ):
+        await coordinator.async_refresh()
+
+    assert coordinator.data is recovered
+    assert coordinator.last_update_success is True
+    assert coordinator.consecutive_failures == 0
+    assert coordinator.last_successful_update is not None
+    assert client.get_realtime_state.await_count == 2
+    assert connect.await_count == 1
+
+
+async def test_slow_transient_failure_retries_once(hass, controller) -> None:
+    """The slow snapshot gets the same single retry, keeping rain data available."""
+    entry = _local_entry(controller)
+    slow = RainBirdIQ4LocalSlowCoordinator(hass, entry, RainBirdIQ4LocalConnection(hass, entry))
+    partial = LocalIrrigationState(
+        True,
+        (),
+        (1, 2),
+        False,
+        None,
+        failed_commands=frozenset({"rain_delay"}),
+        transport_failure=True,
+    )
+    complete = LocalIrrigationState(True, (), (1, 2), False, 0)
+    client = type("Local", (), {"get_slow_state": AsyncMock(side_effect=[partial, complete])})()
+
+    with patch(
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
+        AsyncMock(return_value=client),
+    ):
+        await slow.async_refresh()
+
+    assert slow.data is complete
+    assert slow.data.failed_commands == frozenset()
+    assert client.get_slow_state.await_count == 2
+
+
+async def test_partial_realtime_poll_does_not_refresh_age(hass, controller) -> None:
+    """When the retry also fails, the last good poll time stays where it was."""
+    coordinator = RainBirdIQ4LocalCoordinator(hass, _local_entry(controller))
+    client = type(
+        "Local",
+        (),
+        {
+            "get_realtime_state": AsyncMock(
+                side_effect=[_local_state(), _partial_realtime_state(), _partial_realtime_state()]
+            )
+        },
+    )()
+    connect = AsyncMock(return_value=client)
+
+    with patch(
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
+        connect,
+    ):
+        await coordinator.async_refresh()
+        first_success = coordinator.last_successful_update
+        await coordinator.async_refresh()
+
+    assert first_success is not None
+    assert coordinator.last_successful_update == first_success
+    assert coordinator.consecutive_failures == 1
+    assert client.get_realtime_state.await_count == 3
 
 
 @pytest.mark.parametrize(
