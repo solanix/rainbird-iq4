@@ -88,6 +88,15 @@ class IrrigationEnabledBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
         """Return whether the slow poll supplied the enabled flag."""
         return self._commands_available("irrigation_enabled")
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the controller's physically present terminals for start eligibility."""
+        attributes = super().extra_state_attributes
+        state = getattr(self.coordinator, "data", None)
+        terminals = state.available_terminals if state is not None else None
+        attributes["available_terminals"] = list(terminals) if terminals is not None else None
+        return attributes
+
 
 class RainSensorActiveBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
     """Represent the local rain-sensor input."""
