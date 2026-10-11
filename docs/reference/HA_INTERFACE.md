@@ -90,6 +90,10 @@ All errors are translated (`strings.json` → `exceptions`). Input problems rais
 - Optional controller-level Stop button may follow live validation.
 - Dashboard goal: status, current terminal/program, remaining runtime, enabled station selection, chosen duration, Start/Stop, scheduled program overview; responsive desktop/mobile.
 
+## Stations and programs added or removed in IQ4
+
+New stations, programs and station assignments appear on the next cloud refresh (about 5 minutes) without a reload. Removed ones show *unavailable* until the next HA restart or integration reload, when they are deleted from the entity registry (only with live cloud data; see ADR-015). Dashboards referencing a removed station's entities will show them as missing after that.
+
 ## Registry caveat
 
 HA `_attr_entity_registry_enabled_default` is honored when an entity is first created, not automatically on later changes to cloud enablement. Newly discovered disabled stations may have `disabled_by=integration`; existing ones may remain enabled, and re-enabled cloud stations may require manual registry enablement. Never edit `.storage` by hand.

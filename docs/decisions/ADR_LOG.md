@@ -60,6 +60,11 @@
 **Decision:** Immediately before a start write, inside the shared operation lock, read realtime **and** slow state fresh. Block on not-idle, incomplete realtime, irrigation not confirmed enabled, terminal not confirmed available, or rain sensor / rain delay active **or unknown**. Also require the latest cloud refresh to have succeeded. Stop has none of these requirements and is a no-op only when a fresh complete read proves idle.  
 **Reason:** Slow data can be 5 minutes old; rain and controller state can change in that window. Asymmetric policy: an unnecessary refusal to start is cheap, an unintended start is not; an unnecessary stop is cheap, a blocked stop is not. Cost: a start takes a few extra seconds.
 
+## ADR-015 — Add IQ4 entities live; remove stale ones only at a live setup
+**Status:** Accepted 2026-10-11.  
+**Decision:** Add station, program and runtime entities whenever a successful cloud refresh shows new ones. Remove registry entries for ones no longer in IQ4 only during setup, only with live cloud data (not the saved snapshot) that contains at least one station, and only for station, program and per-station runtime unique IDs.  
+**Reason:** Additions are harmless; deletions discard user customizations and cannot be undone. Deferring them to a live setup and refusing on empty or saved data keeps a cloud hiccup from deleting entities, while still cleaning up real removals.
+
 ## ADR-014 — Saved cloud snapshot keeps local stop available
 **Status:** Accepted 2026-10-10.  
 **Decision:** Persist the last good cloud snapshot per entry in HA storage. If the first cloud refresh fails at startup and local control is configured, load the snapshot and finish setup with the cloud coordinator still marked failed. Cloud entities stay unavailable and starts stay blocked until a live refresh succeeds; local entities and stop work. Without local control or without a snapshot, setup retries as before; credential rejection still triggers reauth. Serialization lives in the integration (`cache.py`) as an integration cache, not in the library.  

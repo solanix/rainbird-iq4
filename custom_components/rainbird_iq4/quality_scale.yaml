@@ -80,10 +80,9 @@ rules:
   docs-troubleshooting: todo
   docs-use-cases: todo
   dynamic-devices:
-    status: todo
+    status: done
     comment: >-
-      One device per entry, but station, program and runtime entities are created only at setup;
-      stations or programs added in IQ4 appear only after a reload.
+      One device per entry; station, program and runtime entities are added on the next cloud refresh when they appear in IQ4.
   entity-category:
     status: done
     comment: Firmware, counts, program summary, controller connected, station metadata and per-station runtimes are diagnostic.
@@ -111,10 +110,9 @@ rules:
     status: exempt
     comment: No user-actionable repair situations identified yet.
   stale-devices:
-    status: todo
+    status: done
     comment: >-
-      One device per entry, but entities for stations or programs removed in IQ4 remain in the
-      registry.
+      One device per entry; entities for stations, programs and assignments removed in IQ4 are deleted at the next setup with live, non-empty cloud data (never from the saved snapshot).
 
   # Platinum
   async-dependency: done

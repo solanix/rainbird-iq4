@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
+import re
 from dataclasses import asdict
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, UnitOfTime
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyrainbird_iq4.cloud.models import Station
 from pyrainbird_iq4.local import LocalIrrigationState, LocalRunState
@@ -20,6 +23,8 @@ from .coordinator import (
 )
 from .entity import RainBirdIQ4Entity, RainBirdIQ4LocalEntity
 
+_LOGGER = logging.getLogger(__name__)
+
 PARALLEL_UPDATES = 0
 
 
@@ -30,7 +35,73 @@ async def async_setup_entry(
 ) -> None:
     """Set up sensor entities from a config entry."""
     runtime = config_entry.runtime_data
-    async_add_entities(_build_entities(runtime.cloud, runtime.local, runtime.local_slow))
+    cloud = runtime.cloud
+    entities = _build_entities(cloud, runtime.local, runtime.local_slow)
+    added = {entity.unique_id for entity in entities}
+    async_add_entities(entities)
+    if cloud.last_update_success and cloud.cached_since is None:
+        _async_remove_stale_entities(hass, config_entry, cloud, added)
+
+    @callback
+    def _async_add_new_entities() -> None:
+        """Add entities for stations, programs or assignments that appeared in IQ4."""
+        if not cloud.last_update_success:
+            return
+        new = [
+            entity
+            for entity in _build_cloud_dynamic_entities(cloud)
+            if entity.unique_id not in added
+        ]
+        if new:
+            added.update(entity.unique_id for entity in new)
+            async_add_entities(new)
+
+    config_entry.async_on_unload(cloud.async_add_listener(_async_add_new_entities))
+
+
+@callback
+def _async_remove_stale_entities(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    cloud: RainBirdIQ4Coordinator,
+    current: set[str | None],
+) -> None:
+    """Remove station, program and runtime entities that no longer exist in IQ4.
+
+    Only runs on live cloud data with at least one station, so an outage or an empty
+    response never deletes entities (and their user customizations).
+    """
+    if not cloud.data.stations:
+        return
+    dynamic = re.compile(
+        rf"^{cloud.controller_id}_(station_\d+(_program_\d+_runtime)?|program_\d+)$"
+    )
+    registry = er.async_get(hass)
+    for entry in er.async_entries_for_config_entry(registry, config_entry.entry_id):
+        if (
+            entry.domain == "sensor"
+            and dynamic.match(entry.unique_id)
+            and entry.unique_id not in current
+        ):
+            _LOGGER.info("Removing %s: no longer present in IQ4", entry.entity_id)
+            registry.async_remove(entry.entity_id)
+
+
+def _build_cloud_dynamic_entities(coordinator: RainBirdIQ4Coordinator) -> list[SensorEntity]:
+    """Build entities that follow IQ4 stations, programs and station assignments."""
+    return [
+        *(StationSensor(coordinator, station) for station in coordinator.data.stations),
+        *(
+            StationProgramRuntimeSensor(
+                coordinator,
+                station,
+                assignment["program_id"],
+            )
+            for station in coordinator.data.stations
+            for assignment in StationSensor(coordinator, station)._program_references
+        ),
+        *(ProgramSensor(coordinator, program) for program in coordinator.data.known_programs),
+    ]
 
 
 def _build_entities(
@@ -44,17 +115,7 @@ def _build_entities(
         StationCountSensor(coordinator),
         ProgramsUsedSensor(coordinator),
         ProgramSummarySensor(coordinator),
-        *(StationSensor(coordinator, station) for station in coordinator.data.stations),
-        *(
-            StationProgramRuntimeSensor(
-                coordinator,
-                station,
-                assignment["program_id"],
-            )
-            for station in coordinator.data.stations
-            for assignment in StationSensor(coordinator, station)._program_references
-        ),
-        *(ProgramSensor(coordinator, program) for program in coordinator.data.known_programs),
+        *_build_cloud_dynamic_entities(coordinator),
     ]
     if local_coordinator is not None:
         entities.extend(
