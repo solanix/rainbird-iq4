@@ -117,10 +117,13 @@ rules:
   # Platinum
   async-dependency: done
   inject-websession:
-    status: todo
+    status: exempt
     comment: >-
-      Cloud API, config flow and local client use Home Assistant's session; the library's
-      authenticate() still opens its own aiohttp session.
+      Cloud API, local client and config flow use Home Assistant's session. The library's
+      cookie-based OIDC login deliberately uses its own short-lived session, closed after the
+      token is issued: it needs an isolated cookie jar (HA's shared session shares one jar across
+      integrations) and a browser User-Agent (HA sessions force their own, and IQ4 sits behind a
+      WAF that has blocked logins).
   strict-typing:
     status: todo
     comment: mypy is not strict; several sensor constructors take an untyped coordinator.
