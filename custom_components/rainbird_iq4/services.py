@@ -20,12 +20,12 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_register_admin_service
 
-from .const import CONF_CONTROLLER_ID, DOMAIN
-from .coordinator import (
+from .connection import (
     IrrigationControlAmbiguousError,
     IrrigationControlError,
     IrrigationControlResult,
 )
+from .const import CONF_CONTROLLER_ID, DOMAIN
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry

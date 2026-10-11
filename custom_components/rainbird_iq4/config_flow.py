@@ -23,7 +23,7 @@ from pyrainbird_iq4.exceptions import (
 )
 
 from .const import CONF_CONTROLLER_ID, CONF_LOCAL_HOST, CONF_LOCAL_PASSWORD, DOMAIN
-from .coordinator import _is_stale
+from .models import is_stale
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def _controller_status_label(controller: Any, status: Any | None) -> str:
     if status is not None:
         if status.is_connected:
             return f"{controller.name} (connected)"
-        if _is_stale(status):
+        if is_stale(status):
             return f"{controller.name} (disconnected, stale status)"
         if status.timestamp:
             return f"{controller.name} (disconnected)"

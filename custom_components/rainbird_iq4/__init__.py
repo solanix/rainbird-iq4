@@ -12,10 +12,10 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from . import cache
+from .connection import RainBirdIQ4LocalConnection
 from .const import DOMAIN, PLATFORMS
 from .coordinator import (
     RainBirdIQ4Coordinator,
-    RainBirdIQ4LocalConnection,
     RainBirdIQ4LocalCoordinator,
     RainBirdIQ4LocalSlowCoordinator,
 )

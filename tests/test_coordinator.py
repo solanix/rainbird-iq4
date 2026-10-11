@@ -27,6 +27,11 @@ from pyrainbird_iq4.local import (
     LocalQueueState,
 )
 
+from custom_components.rainbird_iq4.connection import (
+    IrrigationControlAmbiguousError,
+    IrrigationControlError,
+    RainBirdIQ4LocalConnection,
+)
 from custom_components.rainbird_iq4.const import (
     CONF_CONTROLLER_ID,
     CONF_LOCAL_HOST,
@@ -35,14 +40,11 @@ from custom_components.rainbird_iq4.const import (
     CONF_USERNAME,
 )
 from custom_components.rainbird_iq4.coordinator import (
-    IrrigationControlAmbiguousError,
-    IrrigationControlError,
     RainBirdIQ4Coordinator,
-    RainBirdIQ4Data,
-    RainBirdIQ4LocalConnection,
     RainBirdIQ4LocalCoordinator,
     RainBirdIQ4LocalSlowCoordinator,
 )
+from custom_components.rainbird_iq4.models import RainBirdIQ4Data
 
 
 @pytest.fixture
@@ -318,7 +320,7 @@ async def test_local_failure_keeps_cloud_snapshot_available(hass, controller) ->
         ),
         patch("custom_components.rainbird_iq4.coordinator.RainBirdIQ4CloudClient") as cloud,
         patch(
-            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+            "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
             AsyncMock(return_value=local_client),
         ),
     ):
@@ -373,7 +375,7 @@ async def test_cloud_failure_keeps_local_snapshot_available(hass, controller) ->
             return_value=cloud,
         ),
         patch(
-            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+            "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
             AsyncMock(return_value=local),
         ),
     ):
@@ -423,7 +425,7 @@ async def test_local_polling_does_not_refresh_cloud_or_authenticate(hass, contro
         ),
         patch("custom_components.rainbird_iq4.coordinator.RainBirdIQ4CloudClient") as cloud,
         patch(
-            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+            "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
             AsyncMock(return_value=local_client),
         ),
     ):
@@ -496,7 +498,7 @@ async def test_local_adaptive_polling_backoff_and_recovery(
     caplog.set_level(logging.DEBUG)
 
     with patch(
-        "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
         connect,
     ):
         await coordinator.async_refresh()
@@ -701,7 +703,7 @@ async def test_overlapping_local_coordinator_refreshes_are_serialized(hass, cont
     local_client = type("Local", (), {"get_realtime_state": get_realtime_state})()
     connect = AsyncMock(return_value=local_client)
     with patch(
-        "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
         connect,
     ):
         first = asyncio.create_task(coordinator._async_update_data())
@@ -750,7 +752,7 @@ async def test_connection_reset_reconnects_once_on_next_poll(hass, controller) -
     connect = AsyncMock(side_effect=[first_client, recovered_client])
 
     with patch(
-        "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
         connect,
     ):
         await coordinator.async_refresh()
@@ -802,7 +804,7 @@ async def test_local_connection_failures_are_sanitized(
 
     with (
         patch(
-            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+            "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
             AsyncMock(side_effect=failure),
         ),
         pytest.raises(UpdateFailed) as raised,
@@ -1049,7 +1051,7 @@ async def test_control_connect_failure_means_not_sent(hass, controller) -> None:
 
     with (
         patch(
-            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+            "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
             AsyncMock(side_effect=RainbirdConnectionError()),
         ),
         pytest.raises(IrrigationControlError, match="controller_unreachable") as err,
@@ -1095,7 +1097,7 @@ async def test_stop_sends_when_state_is_unknown(hass, controller) -> None:
     connection._client = client
 
     with patch(
-        "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+        "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
         AsyncMock(return_value=client),
     ):
         result = await connection.async_stop_irrigation()

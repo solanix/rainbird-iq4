@@ -75,7 +75,7 @@ async def test_connected_controller_preference(controller_a, controller_b):
 
 def test_mqtt_schedule_derived_programs():
     """MQTT schedules should count as effective programs when the catalog is empty."""
-    from custom_components.rainbird_iq4.coordinator import build_effective_programs
+    from custom_components.rainbird_iq4.models import build_effective_programs
 
     scheduled = [
         ScheduledProgram(
@@ -94,10 +94,10 @@ def test_mqtt_schedule_derived_programs():
 
 def test_disconnected_stale_controller_handling():
     """Missing timestamps show stale/disconnected status."""
-    from custom_components.rainbird_iq4.coordinator import _is_stale
+    from custom_components.rainbird_iq4.models import is_stale
 
-    assert _is_stale(None) is True
-    assert _is_stale(ConnectionStatus(1, False, "")) is True
+    assert is_stale(None) is True
+    assert is_stale(ConnectionStatus(1, False, "")) is True
     status = ConnectionStatus(1, False, "2024-01-01T00:00:00Z")
-    assert _is_stale(status, now=datetime(2024, 1, 1, 0, 10, tzinfo=UTC)) is False
-    assert _is_stale(status, now=datetime(2024, 1, 1, 0, 16, tzinfo=UTC)) is True
+    assert is_stale(status, now=datetime(2024, 1, 1, 0, 10, tzinfo=UTC)) is False
+    assert is_stale(status, now=datetime(2024, 1, 1, 0, 16, tzinfo=UTC)) is True

@@ -1,4 +1,4 @@
-"""Base entity for Rain Bird IQ4."""
+"""Base entities for Rain Bird IQ4."""
 
 from __future__ import annotations
 
@@ -18,43 +18,50 @@ from .coordinator import (
 LocalCoordinator = RainBirdIQ4LocalCoordinator | RainBirdIQ4LocalSlowCoordinator
 
 
+def _device_info(controller: Controller) -> DeviceInfo:
+    """Describe the one device that every entity of a controller belongs to."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, str(controller.id))},
+        name=controller.name,
+        manufacturer="Rain Bird",
+        model="IQ4",
+        hw_version=str(controller.type),
+        sw_version=controller.version,
+    )
+
+
+def _controller_attributes(controller: Controller) -> dict[str, Any]:
+    return {
+        "controller_id": controller.id,
+        "site_id": controller.site_id,
+        "site_name": controller.site_name,
+    }
+
+
 class RainBirdIQ4Entity(CoordinatorEntity[RainBirdIQ4Coordinator]):
-    """Base entity for all controllers."""
+    """Entity backed by IQ4 cloud data."""
 
     _attr_has_entity_name = True
 
     def __init__(self, coordinator: RainBirdIQ4Coordinator, key: str) -> None:
         super().__init__(coordinator)
-        self.coordinator: RainBirdIQ4Coordinator = coordinator
-        self.controller: Controller = coordinator.data.controller
-        self._key = key
-        self._attr_unique_id = f"{self.controller.id}_{key}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, str(self.controller.id))},
-            name=self.controller.name,
-            manufacturer="Rain Bird",
-            model="IQ4",
-            hw_version=str(self.controller.type),
-            sw_version=self.controller.version,
-        )
+        controller = coordinator.data.controller
+        self._attr_unique_id = f"{controller.id}_{key}"
+        self._attr_device_info = _device_info(controller)
 
     @property
-    def available(self) -> bool:
-        """Return whether the cloud source refreshed successfully."""
-        return bool(super().available)
+    def controller(self) -> Controller:
+        """Return the controller from the latest cloud data."""
+        return self.coordinator.data.controller
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Provide stable extra state attributes."""
-        return {
-            "controller_id": self.controller.id,
-            "site_id": self.controller.site_id,
-            "site_name": self.controller.site_name,
-        }
+        """Provide stable controller identity."""
+        return _controller_attributes(self.controller)
 
 
 class RainBirdIQ4LocalEntity(CoordinatorEntity[LocalCoordinator]):
-    """Base entity backed by the independently refreshed local source."""
+    """Entity backed by local polling, named and identified from cloud data."""
 
     _attr_has_entity_name = True
 
@@ -64,20 +71,16 @@ class RainBirdIQ4LocalEntity(CoordinatorEntity[LocalCoordinator]):
         cloud_coordinator: RainBirdIQ4Coordinator,
         key: str,
     ) -> None:
-        """Subscribe to local updates while retaining cloud station metadata."""
         super().__init__(coordinator)
-        self.coordinator = coordinator
         self.cloud_coordinator = cloud_coordinator
-        self.controller = cloud_coordinator.data.controller
-        self._attr_unique_id = f"{self.controller.id}_{key}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, str(self.controller.id))},
-            name=self.controller.name,
-            manufacturer="Rain Bird",
-            model="IQ4",
-            hw_version=str(self.controller.type),
-            sw_version=self.controller.version,
-        )
+        controller = cloud_coordinator.data.controller
+        self._attr_unique_id = f"{controller.id}_{key}"
+        self._attr_device_info = _device_info(controller)
+
+    @property
+    def controller(self) -> Controller:
+        """Return the controller from the latest cloud data."""
+        return self.cloud_coordinator.data.controller
 
     @property
     def available(self) -> bool:
@@ -95,11 +98,8 @@ class RainBirdIQ4LocalEntity(CoordinatorEntity[LocalCoordinator]):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Provide stable cloud identity on a locally updated entity."""
-        return {
-            "controller_id": self.controller.id,
-            "site_id": self.controller.site_id,
-            "site_name": self.controller.site_name,
+        """Provide controller identity plus local polling health."""
+        return _controller_attributes(self.controller) | {
             "last_successful_update": (
                 last_update.isoformat()
                 if (last_update := getattr(self.coordinator, "last_successful_update", None))

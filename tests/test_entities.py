@@ -27,8 +27,8 @@ from custom_components.rainbird_iq4.binary_sensor import (
     _build_entities as build_binary_sensor_entities,
 )
 from custom_components.rainbird_iq4.const import DOMAIN
-from custom_components.rainbird_iq4.coordinator import RainBirdIQ4Data, build_effective_programs
 from custom_components.rainbird_iq4.entity import RainBirdIQ4Entity
+from custom_components.rainbird_iq4.models import RainBirdIQ4Data, build_effective_programs
 from custom_components.rainbird_iq4.sensor import (
     ActiveProgramSensor,
     ActiveStationSensor,

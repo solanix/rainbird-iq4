@@ -32,7 +32,7 @@ from custom_components.rainbird_iq4.const import (  # noqa: E402
     CONF_USERNAME,
     DOMAIN,
 )
-from custom_components.rainbird_iq4.coordinator import RainBirdIQ4Data  # noqa: E402
+from custom_components.rainbird_iq4.models import RainBirdIQ4Data  # noqa: E402
 from tests.common import MockConfigEntry  # noqa: E402
 
 BACKYARD_ID = 200001
@@ -170,7 +170,7 @@ def mock_io(clients: dict[str, MagicMock], cloud_available: dict[str, bool]) -> 
             fetch_cloud,
         ),
         patch(
-            "custom_components.rainbird_iq4.coordinator.RainBirdIQ4LocalClient.connect",
+            "custom_components.rainbird_iq4.connection.RainBirdIQ4LocalClient.connect",
             AsyncMock(side_effect=connect),
         ),
     ):

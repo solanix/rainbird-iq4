@@ -98,7 +98,7 @@ def _build_cloud_dynamic_entities(coordinator: RainBirdIQ4Coordinator) -> list[S
                 assignment["program_id"],
             )
             for station in coordinator.data.stations
-            for assignment in StationSensor(coordinator, station)._program_references
+            for assignment in coordinator.data.program_references(station.id)
         ),
         *(ProgramSensor(coordinator, program) for program in coordinator.data.known_programs),
     ]
@@ -534,14 +534,7 @@ class StationSensor(RainBirdIQ4Entity, SensorEntity):
     @property
     def _station(self) -> Station | None:
         """Return the station from the latest cloud snapshot when present."""
-        return next(
-            (
-                station
-                for station in self.coordinator.data.stations
-                if station.id == self._station_id
-            ),
-            None,
-        )
+        return self.coordinator.data.station(self._station_id)
 
     @property
     def available(self) -> bool:
@@ -555,33 +548,7 @@ class StationSensor(RainBirdIQ4Entity, SensorEntity):
     @property
     def _program_references(self) -> list[dict[str, Any]]:
         """Return all programs referenced by this station's runtime assignments."""
-        runtimes = next(
-            (
-                runtime.assignments
-                for runtime in self.coordinator.data.runtime_assignments
-                if runtime.station_id == self._station_id
-            ),
-            (),
-        )
-        effective_by_id = {
-            program["id"]: program for program in self.coordinator.data.effective_programs
-        }
-        references = []
-        for runtime in runtimes:
-            program = effective_by_id.get(runtime.program_id)
-            scheduled_times = program.get("scheduled_times", []) if program else []
-            references.append(
-                {
-                    "program_id": runtime.program_id,
-                    "program_name": runtime.program_short_name,
-                    "adjusted_runtime": runtime.adjusted_run_time,
-                    "base_runtime": runtime.base_run_time,
-                    "reference_source": "station_runtime_assignment",
-                    "effective": program is not None,
-                    "scheduled": bool(scheduled_times),
-                }
-            )
-        return references
+        return self.coordinator.data.program_references(self._station_id)
 
     @property
     def _effective_assignment_attributes(self) -> list[dict[str, Any]]:
@@ -651,14 +618,7 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
             ),
             None,
         )
-        reference = next(
-            (
-                item
-                for item in StationSensor(coordinator, station)._program_references
-                if item["program_id"] == program_id
-            ),
-            None,
-        )
+        reference = coordinator.data.program_reference(station.id, program_id)
         station_name = station.name
         short_name = reference["program_name"] if reference is not None else ""
         program_name = (
@@ -676,57 +636,23 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
     @property
     def name(self) -> str:
         """Return a default name using the latest cloud station name."""
-        station = next(
-            (
-                station
-                for station in self.coordinator.data.stations
-                if station.id == self._station_id
-            ),
-            None,
-        )
+        station = self.coordinator.data.station(self._station_id)
         station_name = station.name if station is not None else self._station_name
         return f"{station_name} {self._runtime_name_suffix}"
 
     @property
     def _assignment(self) -> dict[str, Any] | None:
         """Return the current runtime reference when it still exists."""
-        runtimes = next(
-            (
-                runtime.assignments
-                for runtime in self.coordinator.data.runtime_assignments
-                if runtime.station_id == self._station_id
-            ),
-            (),
-        )
-        effective_by_id = {
-            program["id"]: program for program in self.coordinator.data.effective_programs
-        }
-        return next(
-            (
-                {
-                    "program_id": assignment.program_id,
-                    "program_name": assignment.program_short_name,
-                    "adjusted_runtime": assignment.adjusted_run_time,
-                    "base_runtime": assignment.base_run_time,
-                    "reference_source": "station_runtime_assignment",
-                    "effective": assignment.program_id in effective_by_id,
-                    "scheduled": bool(
-                        effective_by_id.get(assignment.program_id, {}).get("scheduled_times", [])
-                    ),
-                }
-                for assignment in runtimes
-                if assignment.program_id == self._program_id
-            ),
-            None,
-        )
+        return self.coordinator.data.program_reference(self._station_id, self._program_id)
 
     @property
     def available(self) -> bool:
         """Return whether this specific runtime reference still exists."""
-        station_exists = any(
-            station.id == self._station_id for station in self.coordinator.data.stations
+        return bool(
+            super().available
+            and self.coordinator.data.station(self._station_id) is not None
+            and self._assignment is not None
         )
-        return bool(super().available and station_exists and self._assignment is not None)
 
     @property
     def native_value(self) -> int | None:
@@ -738,14 +664,7 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Preserve stable station/program IDs and both runtime forms."""
         attributes = super().extra_state_attributes
-        station = next(
-            (
-                station
-                for station in self.coordinator.data.stations
-                if station.id == self._station_id
-            ),
-            None,
-        )
+        station = self.coordinator.data.station(self._station_id)
         assignment = self._assignment
         attributes.update(
             {

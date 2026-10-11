@@ -39,6 +39,22 @@ flowchart TD
 | `/workspaces/ha-rainbird-iq4` | HA config entry, coordinators, entities, control actions, these docs |
 | `/workspaces/home-assistant-core` | HA development environment, `config/`, and the test fixtures used by `tests_ha/`; do not modify HA Core source |
 
+## Integration module layout
+
+| Module | Owns |
+|---|---|
+| `__init__.py` | Entry setup/unload/removal, saved-snapshot fallback, action registration hook |
+| `models.py` | `RainBirdIQ4Data` snapshot and pure derivations: station lookup, station program references, known/effective programs, staleness |
+| `coordinator.py` | Cloud, local realtime and local slow `DataUpdateCoordinator`s (polling, backoff, saving the snapshot) |
+| `connection.py` | `RainBirdIQ4LocalConnection`: one serialized local client per entry, and the control safety boundary (start/stop guards, `IrrigationControlError`, results) |
+| `services.py` | Admin actions: schema, device → entry resolution, HA error/response mapping |
+| `cache.py` | Saved-snapshot serialization |
+| `entity.py` | Base entities, shared device info |
+| `sensor.py`, `binary_sensor.py`, `select.py`, `number.py` | Entities only; data lookups go through `models.py` |
+| `config_flow.py`, `diagnostics.py` | Config/reauth/reconfigure/options flows; redacted diagnostics |
+
+Dependencies point one way: platforms → `entity` → `coordinator` → `connection` → `models`; nothing below imports from above.
+
 ## Local transport / concurrency
 
 - TCP 443 over HTTPS with controller's self-signed certificate. Local client uses existing authenticated `AsyncRainbirdController` protocol stack.

@@ -17,7 +17,7 @@ from pyrainbird_iq4.cloud.models import (
 )
 from syrupy.assertion import SnapshotAssertion
 
-from custom_components.rainbird_iq4.coordinator import build_effective_programs
+from custom_components.rainbird_iq4.models import build_effective_programs
 
 from .conftest import CLOUD_DATA, BACKYARD_ID, BACKYARD_STATION_ID, make_entry, setup_entry
 
