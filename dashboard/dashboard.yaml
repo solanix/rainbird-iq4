@@ -1,6 +1,6 @@
 # Separate development dashboard for the Rain Bird IQ4 card. It does not replace
 # or modify any existing dashboard. Paste into a NEW dashboard's raw configuration
-# editor (see README.md). Requires the card resource to be registered first.
+# editor (see README.md). The card ships with the integration; no resource needed.
 title: Irrigation (IQ4)
 views:
   - title: Irrigation

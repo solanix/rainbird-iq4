@@ -5,6 +5,10 @@
     "@solanix"
   ],
   "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http"
+  ],
   "integration_type": "device",
   "iot_class": "local_polling",
   "loggers": [

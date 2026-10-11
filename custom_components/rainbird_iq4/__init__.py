@@ -12,6 +12,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from . import saved_data
+from .card import async_register_card
 from .connection import RainBirdIQ4LocalConnection
 from .const import DOMAIN, PLATFORMS
 from .coordinator import (
@@ -34,8 +35,9 @@ class RainBirdIQ4RuntimeData:
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register control actions once, independent of config entry lifecycle."""
+    """Register control actions and the card once, independent of config entries."""
     async_setup_services(hass)
+    await async_register_card(hass)
     return True
 
 

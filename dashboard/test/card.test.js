@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { before, describe, test } from "node:test";
 
-import { bundle } from "../scripts/build.mjs";
+import { OUTPUT, bundle } from "../scripts/build.mjs";
 import { buildFixture } from "./fixtures.js";
 
 class FakeShadowRoot {
@@ -179,5 +179,9 @@ describe("card element", () => {
   test("bundle version matches package.json", () => {
     const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url)));
     assert.match(bundle(), new RegExp(`CARD_VERSION = "${version.replace(/\./g, "\\.")}"`));
+  });
+
+  test("the bundle shipped with the integration is up to date", () => {
+    assert.equal(readFileSync(OUTPUT, "utf8"), bundle(), "run: node scripts/build.mjs");
   });
 });

@@ -109,3 +109,8 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Manual Program A/B/C write numbering validation.
 - Dashboard layouts and control UX (station picker instead of raw station ID).
 - Migrating the stub-based integration tests to real HA.
+
+## 2026-10-11 — Lovelace card ships with the integration
+
+- The Rain Bird IQ4 card (`dashboard/`) is bundled into `custom_components/rainbird_iq4/frontend/` and loaded on every dashboard at startup (`card.py`, `add_extra_js_url`), with a content hash in the URL for cache busting. No resource registration or `www/` copy is needed; `dashboard/scripts/install-dev.sh` is removed. The manifest now depends on `frontend` and `http`.
+- A card test fails if the committed bundle is stale; a real-HA test checks the card is served and registered.

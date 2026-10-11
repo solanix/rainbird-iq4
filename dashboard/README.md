@@ -47,8 +47,7 @@ src/view.js      pure HTML rendering (escaped), one function per view
 src/strings.js   English strings, keyed for localization
 src/styles.js    theme-variable CSS, 44 px targets, reduced-motion support
 src/card.js      custom element: registry discovery, events, HA calls
-scripts/build.mjs       bundles src/ into dist/rainbird-iq4-card.js
-scripts/install-dev.sh  builds and copies into <config>/www/rainbird-iq4/
+scripts/build.mjs  bundles src/ into ../custom_components/rainbird_iq4/frontend/
 test/            node:test suites (model, view, element smoke tests with a fake hass)
 dashboard.yaml   a separate dashboard containing the card
 ```
@@ -57,31 +56,23 @@ dashboard.yaml   a separate dashboard containing the card
 
 ```bash
 cd ha-rainbird-iq4/dashboard
-npm test          # node --test; Node 20+, no install step
+node scripts/build.mjs   # rebuild the bundle the integration ships (commit it)
+npm test          # node --test; Node 20+, no install step; fails if the bundle is stale
 npm install && npm run typecheck   # tsc --checkJs over src/ (jsconfig.json)
 ```
 
 All tests are offline. The element tests load the built bundle with a minimal DOM shim and
 a fake `hass`, and assert exactly which calls reach Home Assistant.
 
-## Install on the dev instance
+## Install
 
-Development target only. Do not install on production HAOS without approval.
+The card ships with the integration. On startup the integration serves
+`custom_components/rainbird_iq4/frontend/rainbird-iq4-card.js` and loads it on every
+dashboard, so there is no resource to register and nothing to copy into `www/`.
 
-1. Build and copy the card (inside the dev container):
-   ```bash
-   cd /workspaces/ha-rainbird-iq4/dashboard
-   scripts/install-dev.sh /workspaces/home-assistant-core/config
-   ```
-   If the script reports that `www/` was just created, restart Home Assistant once.
-2. Register the resource: **Settings → Dashboards → ⋮ → Resources → Add resource**,
-   URL `/local/rainbird-iq4/rainbird-iq4-card.js?v=0.1.0`, type **JavaScript module**.
-   (The Resources menu needs **Advanced mode** in your user profile.)
-3. Create a separate dashboard: **Settings → Dashboards → Add dashboard → New dashboard
-   from scratch**, title "Irrigation (IQ4)". Open it, **⋮ → Edit dashboard → ⋮ → Raw
-   configuration editor**, paste `dashboard.yaml`, save.
-
-The existing Irrigation dashboard is not touched.
+To use it, add a card of type `custom:rainbird-iq4-card` to any dashboard, or create a
+separate one: **Settings → Dashboards → Add dashboard → New dashboard from scratch**, open
+it, **⋮ → Edit dashboard → ⋮ → Raw configuration editor**, paste `dashboard.yaml`, save.
 
 ### Card options
 
@@ -94,17 +85,15 @@ The existing Irrigation dashboard is not touched.
 
 ## Upgrade and cache busting
 
-Bump `version` in `package.json` and `CARD_VERSION` in `src/card.js` together (a test
-enforces it), rerun `install-dev.sh`, and change the resource URL's `?v=` to match. The
-bundle is a single file so one versioned URL covers all of it.
+Rebuild with `node scripts/build.mjs` and commit the bundle with the source change. The
+integration puts a hash of the bundle in the card's URL, so browsers fetch the new file
+after Home Assistant restarts. Bump `version` in `package.json` and `CARD_VERSION` in
+`src/card.js` together for user-visible releases (a test enforces that they match).
 
-## Rollback
+## Removing the card
 
-1. Delete the "Irrigation (IQ4)" dashboard (Settings → Dashboards).
-2. Remove the `/local/rainbird-iq4/...` resource.
-3. Delete `<config>/www/rainbird-iq4/`.
-
-Nothing in the integration depends on the card.
+Delete any dashboards or cards that use it. The file is part of the integration, so it is
+removed with the integration.
 
 ## Integration dependency
 
