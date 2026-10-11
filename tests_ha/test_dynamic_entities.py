@@ -142,7 +142,7 @@ async def test_saved_snapshot_never_removes_entities(
 
     await _reload(hass, entry)
 
-    assert entry.runtime_data.cloud.cached_since is not None
+    assert entry.runtime_data.cloud.saved_data_since is not None
     assert removed in _unique_ids(hass, entry)
 
 

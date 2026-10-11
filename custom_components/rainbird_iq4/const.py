@@ -13,7 +13,7 @@ CONF_CONTROLLER_ID = "controller_id"
 CONF_LOCAL_HOST = "local_host"
 CONF_LOCAL_PASSWORD = "local_password"
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.NUMBER, Platform.SELECT, Platform.SENSOR]
-UPDATE_INTERVAL = timedelta(minutes=5)
+CLOUD_UPDATE_INTERVAL = timedelta(minutes=5)
 LOCAL_IDLE_UPDATE_INTERVAL = timedelta(seconds=30)
 LOCAL_RUNNING_UPDATE_INTERVAL = timedelta(seconds=10)
 LOCAL_SLOW_UPDATE_INTERVAL = timedelta(minutes=5)

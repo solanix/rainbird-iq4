@@ -55,7 +55,7 @@ async def test_old_cloud_only_entry_does_not_create_local_coordinator(hass) -> N
 
     with (
         patch(
-            "custom_components.rainbird_iq4.RainBirdIQ4Coordinator",
+            "custom_components.rainbird_iq4.RainBirdIQ4CloudCoordinator",
             return_value=cloud,
         ),
         patch("custom_components.rainbird_iq4.RainBirdIQ4LocalCoordinator") as local_class,
@@ -81,7 +81,7 @@ async def test_local_options_create_coordinator_and_reload_entry(hass) -> None:
 
     with (
         patch(
-            "custom_components.rainbird_iq4.RainBirdIQ4Coordinator",
+            "custom_components.rainbird_iq4.RainBirdIQ4CloudCoordinator",
             return_value=cloud,
         ),
         patch(

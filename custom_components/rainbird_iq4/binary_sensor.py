@@ -10,7 +10,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .coordinator import RainBirdIQ4Coordinator, RainBirdIQ4LocalSlowCoordinator
+from .coordinator import RainBirdIQ4CloudCoordinator, RainBirdIQ4LocalSlowCoordinator
 from .entity import RainBirdIQ4Entity, RainBirdIQ4LocalEntity
 
 PARALLEL_UPDATES = 0
@@ -27,7 +27,7 @@ async def async_setup_entry(
 
 
 def _build_entities(
-    cloud_coordinator: RainBirdIQ4Coordinator,
+    cloud_coordinator: RainBirdIQ4CloudCoordinator,
     local_coordinator: RainBirdIQ4LocalSlowCoordinator | None = None,
 ) -> list[BinarySensorEntity]:
     """Build cloud and optional local binary sensors."""
@@ -49,7 +49,7 @@ class ControllerConnectedBinarySensor(RainBirdIQ4Entity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "connected")
 
     @property
@@ -73,7 +73,7 @@ class IrrigationEnabledBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalSlowCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "irrigation_enabled")
 
@@ -98,7 +98,7 @@ class RainSensorActiveBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalSlowCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "rain_sensor_active")
 

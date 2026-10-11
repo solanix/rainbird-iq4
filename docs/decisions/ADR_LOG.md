@@ -67,7 +67,7 @@
 
 ## ADR-014 — Saved cloud snapshot keeps local stop available
 **Status:** Accepted 2026-10-10.  
-**Decision:** Persist the last good cloud snapshot per entry in HA storage. If the first cloud refresh fails at startup and local control is configured, load the snapshot and finish setup with the cloud coordinator still marked failed. Cloud entities stay unavailable and starts stay blocked until a live refresh succeeds; local entities and stop work. Without local control or without a snapshot, setup retries as before; credential rejection still triggers reauth. Serialization lives in the integration (`cache.py`) as an integration cache, not in the library.  
+**Decision:** Persist the last good cloud snapshot per entry in HA storage. If the first cloud refresh fails at startup and local control is configured, load the snapshot and finish setup with the cloud coordinator still marked failed. Cloud entities stay unavailable and starts stay blocked until a live refresh succeeds; local entities and stop work. Without local control or without a snapshot, setup retries as before; credential rejection still triggers reauth. Serialization lives in the integration (`saved_data.py`) as an integration cache, not in the library.  
 **Reason:** Every entity is built from cloud data, so the cloud first refresh gated the whole entry; an IQ4/WAF outage at HA startup made local stop unavailable, contradicting ADR-002. Using an old snapshot for display is acceptable only while it is clearly marked unavailable and never used to authorize a start.
 
 ## ADR-013 — Real-HA test suite alongside stubs

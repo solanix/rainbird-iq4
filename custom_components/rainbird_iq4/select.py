@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from pyrainbird_iq4.cloud.models import Station
 
-from .coordinator import RainBirdIQ4Coordinator
+from .coordinator import RainBirdIQ4CloudCoordinator
 from .entity import RainBirdIQ4Entity
 
 ATTR_STATION_ID = "station_id"
@@ -40,7 +40,7 @@ class StartStationSelect(RainBirdIQ4Entity, RestoreEntity, SelectEntity):
 
     _attr_translation_key = "start_station"
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "start_station_select")
         self._selected_station_id: int | None = None
 

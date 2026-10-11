@@ -10,7 +10,7 @@ from pyrainbird_iq4.cloud.models import Controller
 
 from .const import DOMAIN
 from .coordinator import (
-    RainBirdIQ4Coordinator,
+    RainBirdIQ4CloudCoordinator,
     RainBirdIQ4LocalCoordinator,
     RainBirdIQ4LocalSlowCoordinator,
 )
@@ -38,12 +38,12 @@ def _controller_attributes(controller: Controller) -> dict[str, Any]:
     }
 
 
-class RainBirdIQ4Entity(CoordinatorEntity[RainBirdIQ4Coordinator]):
+class RainBirdIQ4Entity(CoordinatorEntity[RainBirdIQ4CloudCoordinator]):
     """Entity backed by IQ4 cloud data."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator, key: str) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator, key: str) -> None:
         super().__init__(coordinator)
         controller = coordinator.data.controller
         self._attr_unique_id = f"{controller.id}_{key}"
@@ -68,7 +68,7 @@ class RainBirdIQ4LocalEntity(CoordinatorEntity[LocalCoordinator]):
     def __init__(
         self,
         coordinator: LocalCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
         key: str,
     ) -> None:
         super().__init__(coordinator)

@@ -40,7 +40,7 @@ from custom_components.rainbird_iq4.const import (
     CONF_USERNAME,
 )
 from custom_components.rainbird_iq4.coordinator import (
-    RainBirdIQ4Coordinator,
+    RainBirdIQ4CloudCoordinator,
     RainBirdIQ4LocalCoordinator,
     RainBirdIQ4LocalSlowCoordinator,
 )
@@ -83,7 +83,7 @@ async def test_coordinator_refresh(hass, controller):
             "entry_id": "abc",
         },
     )()
-    coordinator = RainBirdIQ4Coordinator(hass, entry)
+    coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
 
     authenticate = AsyncMock(return_value="token")
     with (
@@ -169,7 +169,7 @@ async def test_expired_api_token_reauthenticates_once(hass, controller) -> None:
             "entry_id": "abc",
         },
     )()
-    coordinator = RainBirdIQ4Coordinator(hass, entry)
+    coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     authenticate = AsyncMock(side_effect=["old-token", "new-token"])
     expired_client = type("Client", (), {})()
     expired_client.get_controllers = AsyncMock(
@@ -211,7 +211,7 @@ async def test_transient_api_failure_keeps_cached_authentication(hass, controlle
             "entry_id": "abc",
         },
     )()
-    coordinator = RainBirdIQ4Coordinator(hass, entry)
+    coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     authenticate = AsyncMock(return_value="token")
     client = type("Client", (), {})()
     _configure_client(client, controller)
@@ -257,7 +257,7 @@ async def test_waf_challenge_enters_authentication_backoff(hass, controller) -> 
             "entry_id": "abc",
         },
     )()
-    coordinator = RainBirdIQ4Coordinator(hass, entry)
+    coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     authenticate = AsyncMock(
         side_effect=RainBirdIQ4WAFChallengeError("IQ4 login was blocked by an AWS WAF challenge")
     )
@@ -305,7 +305,7 @@ async def test_local_failure_keeps_cloud_snapshot_available(hass, controller) ->
             "entry_id": "abc",
         },
     )()
-    cloud_coordinator = RainBirdIQ4Coordinator(hass, entry)
+    cloud_coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     local_coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     local_client = type(
         "Local",
@@ -355,7 +355,7 @@ async def test_cloud_failure_keeps_local_snapshot_available(hass, controller) ->
             "entry_id": "abc",
         },
     )()
-    cloud_coordinator = RainBirdIQ4Coordinator(hass, entry)
+    cloud_coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     local_coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     cloud = type("Client", (), {})()
     _configure_client(cloud, controller)
@@ -409,7 +409,7 @@ async def test_local_polling_does_not_refresh_cloud_or_authenticate(hass, contro
             "entry_id": "abc",
         },
     )()
-    cloud_coordinator = RainBirdIQ4Coordinator(hass, entry)
+    cloud_coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     local_coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     authenticate = AsyncMock(return_value="token")
     local_client = type(

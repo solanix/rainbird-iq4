@@ -48,7 +48,7 @@ flowchart TD
 | `coordinator.py` | Cloud, local realtime and local slow `DataUpdateCoordinator`s (polling, backoff, saving the snapshot) |
 | `connection.py` | `RainBirdIQ4LocalConnection`: one serialized local client per entry, and the control safety boundary (start/stop guards, `IrrigationControlError`, results) |
 | `services.py` | Admin actions: schema, device → entry resolution, HA error/response mapping |
-| `cache.py` | Saved-snapshot serialization |
+| `saved_data.py` | Saved-snapshot serialization |
 | `entity.py` | Base entities, shared device info |
 | `sensor.py`, `binary_sensor.py`, `select.py`, `number.py` | Entities only; data lookups go through `models.py` |
 | `config_flow.py`, `diagnostics.py` | Config/reauth/reconfigure/options flows; redacted diagnostics |

@@ -33,9 +33,10 @@ from pyrainbird_iq4.local import (
     LocalRunState,
 )
 
-from . import cache
+from . import saved_data
 from .connection import RainBirdIQ4LocalConnection
 from .const import (
+    CLOUD_UPDATE_INTERVAL,
     CONF_CONTROLLER_ID,
     CONF_LOCAL_HOST,
     CONF_LOCAL_PASSWORD,
@@ -46,7 +47,6 @@ from .const import (
     LOCAL_IDLE_UPDATE_INTERVAL,
     LOCAL_RUNNING_UPDATE_INTERVAL,
     LOCAL_SLOW_UPDATE_INTERVAL,
-    UPDATE_INTERVAL,
 )
 from .models import RainBirdIQ4Data, build_effective_programs, is_stale
 
@@ -57,7 +57,7 @@ AUTH_BACKOFF_INITIAL_SECONDS = 5 * 60
 AUTH_BACKOFF_MAX_SECONDS = 60 * 60
 
 
-class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
+class RainBirdIQ4CloudCoordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
     """Coordinate refreshes for the selected controller."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -68,16 +68,16 @@ class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
         self._auth_retry_at: float = 0.0
         self._auth_failure_count: int = 0
         self._store: Store[dict[str, Any]] = Store(
-            hass, cache.STORAGE_VERSION, cache.storage_key(entry.entry_id)
+            hass, saved_data.STORAGE_VERSION, saved_data.storage_key(entry.entry_id)
         )
         self._saved: dict[str, Any] | None = None
-        self.cached_since: str | None = None
+        self.saved_data_since: str | None = None
         super().__init__(
             hass,
             _LOGGER,
             config_entry=entry,
             name=f"{DOMAIN}_{self.controller_id}",
-            update_interval=UPDATE_INTERVAL,
+            update_interval=CLOUD_UPDATE_INTERVAL,
         )
 
     def _record_auth_backoff(self) -> int:
@@ -194,13 +194,13 @@ class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
                 translation_key="cloud_update_failed",
                 translation_placeholders={"error": type(err).__name__},
             ) from err
-        self.cached_since = None
+        self.saved_data_since = None
         await self._async_save(data)
         return data
 
     async def _async_save(self, data: RainBirdIQ4Data) -> None:
         """Persist the snapshot when it changed; a failed write never fails the refresh."""
-        serialized = cache.serialize(data)
+        serialized = saved_data.serialize(data)
         if serialized == self._saved:
             return
         try:
@@ -222,18 +222,18 @@ class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
         if stored is None:
             return False
         try:
-            data = cache.deserialize(stored["data"])
+            data = saved_data.deserialize(stored["data"])
         except (KeyError, TypeError, ValueError) as err:
             _LOGGER.warning("Ignoring unreadable IQ4 cloud snapshot: %s", type(err).__name__)
             return False
         self.data = data
-        self.cached_since = stored["saved_at"]
+        self.saved_data_since = stored["saved_at"]
         self._saved = stored["data"]
         _LOGGER.warning(
             "IQ4 cloud unavailable for controller %s; using station data saved at %s. "
             "Starts are blocked until the cloud recovers; stop remains available",
             self.controller_id,
-            self.cached_since,
+            self.saved_data_since,
         )
         return True
 

@@ -17,7 +17,7 @@ from pyrainbird_iq4.cloud.models import Station
 from pyrainbird_iq4.local import LocalIrrigationState, LocalRunState
 
 from .coordinator import (
-    RainBirdIQ4Coordinator,
+    RainBirdIQ4CloudCoordinator,
     RainBirdIQ4LocalCoordinator,
     RainBirdIQ4LocalSlowCoordinator,
 )
@@ -39,7 +39,7 @@ async def async_setup_entry(
     entities = _build_entities(cloud, runtime.local, runtime.local_slow)
     added = {entity.unique_id for entity in entities}
     async_add_entities(entities)
-    if cloud.last_update_success and cloud.cached_since is None:
+    if cloud.last_update_success and cloud.saved_data_since is None:
         _async_remove_stale_entities(hass, config_entry, cloud, added)
 
     @callback
@@ -63,7 +63,7 @@ async def async_setup_entry(
 def _async_remove_stale_entities(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    cloud: RainBirdIQ4Coordinator,
+    cloud: RainBirdIQ4CloudCoordinator,
     current: set[str | None],
 ) -> None:
     """Remove station, program and runtime entities that no longer exist in IQ4.
@@ -87,7 +87,7 @@ def _async_remove_stale_entities(
             registry.async_remove(entry.entity_id)
 
 
-def _build_cloud_dynamic_entities(coordinator: RainBirdIQ4Coordinator) -> list[SensorEntity]:
+def _build_cloud_dynamic_entities(coordinator: RainBirdIQ4CloudCoordinator) -> list[SensorEntity]:
     """Build entities that follow IQ4 stations, programs and station assignments."""
     return [
         *(StationSensor(coordinator, station) for station in coordinator.data.stations),
@@ -105,7 +105,7 @@ def _build_cloud_dynamic_entities(coordinator: RainBirdIQ4Coordinator) -> list[S
 
 
 def _build_entities(
-    coordinator: RainBirdIQ4Coordinator,
+    coordinator: RainBirdIQ4CloudCoordinator,
     local_coordinator: RainBirdIQ4LocalCoordinator | None = None,
     slow_coordinator: RainBirdIQ4LocalSlowCoordinator | None = None,
 ) -> list[SensorEntity]:
@@ -140,7 +140,7 @@ class FirmwareVersionSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "firmware_version"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "firmware_version")
 
     @property
@@ -155,7 +155,7 @@ class StationCountSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "station_count"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "station_count")
 
     @property
@@ -170,7 +170,7 @@ class ProgramsUsedSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "programs_used_count"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "programs_used_count")
 
     @property
@@ -186,7 +186,7 @@ class RainDelaySensor(RainBirdIQ4Entity, SensorEntity):
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.DAYS
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "rain_delay")
 
     @property
@@ -206,7 +206,7 @@ class LocalRainDelaySensor(RainBirdIQ4LocalEntity, SensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalSlowCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "rain_delay")
 
@@ -236,7 +236,7 @@ class IrrigationStateSensor(RainBirdIQ4LocalEntity, SensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "irrigation_state")
 
@@ -280,7 +280,7 @@ class ActiveStationSensor(RainBirdIQ4LocalEntity, SensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "active_station")
 
@@ -352,7 +352,7 @@ class QueueZonesRemainingSensor(RainBirdIQ4LocalEntity, SensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "queue_zones_remaining")
 
@@ -379,7 +379,7 @@ class ActiveProgramSensor(RainBirdIQ4LocalEntity, SensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "active_program")
 
@@ -452,7 +452,7 @@ class RemainingRuntimeSensor(RainBirdIQ4LocalEntity, SensorEntity):
     def __init__(
         self,
         coordinator: RainBirdIQ4LocalCoordinator,
-        cloud_coordinator: RainBirdIQ4Coordinator,
+        cloud_coordinator: RainBirdIQ4CloudCoordinator,
     ) -> None:
         super().__init__(coordinator, cloud_coordinator, "remaining_runtime")
 
@@ -487,7 +487,7 @@ class ProgramSummarySensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "program_summary"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "program_summary")
 
     @property
@@ -518,7 +518,7 @@ class StationSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "station_metadata"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator, station: Station) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator, station: Station) -> None:
         super().__init__(coordinator, f"station_{station.id}")
         self._station_id = station.id
         self._station_name = station.name
@@ -602,7 +602,7 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
 
     def __init__(
-        self, coordinator: RainBirdIQ4Coordinator, station: Station, program_id: int
+        self, coordinator: RainBirdIQ4CloudCoordinator, station: Station, program_id: int
     ) -> None:
         super().__init__(
             coordinator,
@@ -687,7 +687,7 @@ class ProgramSensor(RainBirdIQ4Entity, SensorEntity):
 
     _attr_translation_key = "program"
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator, program: dict[str, Any]) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator, program: dict[str, Any]) -> None:
         super().__init__(coordinator, f"program_{program['id']}")
         self._program_id = program["id"]
         self._attr_name = program["name"]

@@ -8,7 +8,7 @@ from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .coordinator import RainBirdIQ4Coordinator
+from .coordinator import RainBirdIQ4CloudCoordinator
 from .entity import RainBirdIQ4Entity
 
 DEFAULT_DURATION_MINUTES = 5
@@ -37,7 +37,7 @@ class StartDurationNumber(RainBirdIQ4Entity, RestoreNumber):
     _attr_native_step = 1
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
 
-    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4CloudCoordinator) -> None:
         super().__init__(coordinator, "start_duration")
         self._attr_native_value = DEFAULT_DURATION_MINUTES
 

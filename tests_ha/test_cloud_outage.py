@@ -13,9 +13,9 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from pyrainbird_iq4.exceptions import RainBirdIQ4CredentialsError
 
-from custom_components.rainbird_iq4 import cache
+from custom_components.rainbird_iq4 import saved_data
 from custom_components.rainbird_iq4.const import DOMAIN
-from custom_components.rainbird_iq4.coordinator import RainBirdIQ4Coordinator
+from custom_components.rainbird_iq4.coordinator import RainBirdIQ4CloudCoordinator
 from tests.common import MockConfigEntry
 
 from .conftest import (
@@ -28,7 +28,7 @@ from .conftest import (
 )
 
 # Captured before the autouse mock replaces it, to exercise the real auth path.
-REAL_CLOUD_FETCH = RainBirdIQ4Coordinator._async_fetch_cloud
+REAL_CLOUD_FETCH = RainBirdIQ4CloudCoordinator._async_fetch_cloud
 
 STATION_METADATA = "sensor.controller_200001_station_001_metadata"
 IRRIGATION_STATE = "sensor.controller_200001_irrigation_state"
@@ -64,9 +64,9 @@ async def test_successful_refresh_saves_snapshot(
     """A successful cloud refresh saves a snapshot that round-trips exactly."""
     entry = await setup_entry(hass, make_entry(BACKYARD_ID))
 
-    saved = hass_storage[cache.storage_key(entry.entry_id)]["data"]
+    saved = hass_storage[saved_data.storage_key(entry.entry_id)]["data"]
 
-    assert cache.deserialize(saved["data"]) == CLOUD_DATA[BACKYARD_ID]
+    assert saved_data.deserialize(saved["data"]) == CLOUD_DATA[BACKYARD_ID]
     assert "password" not in str(saved)
 
 
@@ -129,14 +129,14 @@ async def test_cloud_recovery_restores_cloud_entities(
     """Cloud entities recover on the next successful refresh without a reload."""
     entry = await setup_entry(hass, make_entry(BACKYARD_ID))
     await _restart_with_cloud_down(hass, entry, cloud_available)
-    assert entry.runtime_data.cloud.cached_since is not None
+    assert entry.runtime_data.cloud.saved_data_since is not None
 
     cloud_available["ok"] = True
     await entry.runtime_data.cloud.async_refresh()
     await hass.async_block_till_done()
 
     assert _state(hass, STATION_METADATA) != STATE_UNAVAILABLE
-    assert entry.runtime_data.cloud.cached_since is None
+    assert entry.runtime_data.cloud.saved_data_since is None
 
 
 async def test_cloud_outage_without_snapshot_retries(
@@ -168,7 +168,7 @@ async def test_rejected_credentials_reauth_instead_of_snapshot(hass: HomeAssista
     assert await hass.config_entries.async_unload(entry.entry_id)
 
     with (
-        patch.object(RainBirdIQ4Coordinator, "_async_fetch_cloud", REAL_CLOUD_FETCH),
+        patch.object(RainBirdIQ4CloudCoordinator, "_async_fetch_cloud", REAL_CLOUD_FETCH),
         patch(
             "custom_components.rainbird_iq4.coordinator.authenticate",
             AsyncMock(side_effect=RainBirdIQ4CredentialsError("rejected")),
@@ -187,9 +187,9 @@ async def test_removing_entry_deletes_snapshot(
 ) -> None:
     """The saved snapshot is deleted with the entry."""
     entry = await setup_entry(hass, make_entry(BACKYARD_ID))
-    assert cache.storage_key(entry.entry_id) in hass_storage
+    assert saved_data.storage_key(entry.entry_id) in hass_storage
 
     await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
 
-    assert cache.storage_key(entry.entry_id) not in hass_storage
+    assert saved_data.storage_key(entry.entry_id) not in hass_storage
