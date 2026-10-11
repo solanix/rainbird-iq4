@@ -1,0 +1,20 @@
+# Separate development dashboard for the Rain Bird IQ4 card. It does not replace
+# or modify any existing dashboard. Paste into a NEW dashboard's raw configuration
+# editor (see README.md). Requires the card resource to be registered first.
+title: Irrigation (IQ4)
+views:
+  - title: Irrigation
+    path: iq4
+    icon: mdi:sprinkler-variant
+    type: panel
+    cards:
+      - type: custom:rainbird-iq4-card
+        # simple: Status, Control, Programs
+        # standard: all six views
+        # advanced: all six views plus raw (non-secret) IDs
+        profile: standard
+        # Optional: pin a controller by Home Assistant device ID. Without it the
+        # card shows a selector when more than one controller exists.
+        # controller: REPLACE_WITH_DEVICE_ID
+        # Optional: status | control | programs | zones | history | diagnostics
+        # default_view: status
