@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # The Home Assistant Core commit the dev container runs; tests_ha uses its fixtures.
+  HA_CORE_REF: 8161671ede3af80d1c7fb8d02a8bf9b37cfb6465
+
+jobs:
+  integration:
+    name: Integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: ha-rainbird-iq4
+      - name: Check out pyrainbird-iq4 (private)
+        uses: actions/checkout@v5
+        with:
+          repository: solanix/pyrainbird-iq4
+          token: ${{ secrets.PYRAINBIRD_IQ4_TOKEN }}
+          path: pyrainbird-iq4
+      - name: Check out Home Assistant Core
+        uses: actions/checkout@v5
+        with:
+          repository: home-assistant/core
+          ref: ${{ env.HA_CORE_REF }}
+          path: home-assistant-core
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: home-assistant-core/.python-version
+      - uses: astral-sh/setup-uv@v6
+      - name: Install
+        run: |
+          uv venv .venv
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          # Requirements of the core components rainbird_iq4 depends on (frontend, http, ...).
+          python - > component-requirements.txt <<'PY'
+          import json, pathlib
+          root = pathlib.Path("home-assistant-core/homeassistant/components")
+          manifest = json.loads(pathlib.Path(
+              "ha-rainbird-iq4/custom_components/rainbird_iq4/manifest.json").read_text())
+          # diagnostics: used by tests_ha; mqtt: Core's tests/common.py imports paho.
+          seen, reqs, stack = set(), set(), [
+              *manifest.get("dependencies", []), "diagnostics", "mqtt"]
+          while stack:
+              name = stack.pop()
+              if name in seen:
+                  continue
+              seen.add(name)
+              component = json.loads((root / name / "manifest.json").read_text())
+              reqs.update(component.get("requirements", []))
+              stack += component.get("dependencies", [])
+          print("\n".join(sorted(reqs)))
+          PY
+          # Compat editable mode installs a plain path entry mypy can follow (as Core's
+          # script/setup does); the default import hook hides Core's types from mypy.
+          uv pip install --python .venv/bin/python \
+            --config-settings editable_mode=compat \
+            -e home-assistant-core \
+            -r home-assistant-core/requirements_test.txt \
+            -r component-requirements.txt \
+            -e pyrainbird-iq4
+      - name: Ruff
+        working-directory: ha-rainbird-iq4
+        run: |
+          ruff check .
+          ruff format --check custom_components tests tests_ha
+      - name: Mypy
+        working-directory: ha-rainbird-iq4
+        run: mypy .
+      - name: Tests (Home Assistant stubs)
+        working-directory: ha-rainbird-iq4
+        run: python -m pytest
+      - name: Tests (real Home Assistant)
+        working-directory: home-assistant-core
+        run: >-
+          python -m pytest -c pyproject.toml -p tests.conftest -p no:cacheprovider
+          ../ha-rainbird-iq4/tests_ha
+
+  card:
+    name: Lovelace card
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
