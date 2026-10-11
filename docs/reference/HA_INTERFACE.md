@@ -4,7 +4,8 @@
 
 Reported Backyard entities include:
 
-- `sensor.backyard_irrigation_state` — realtime state; verified `idle` and `running` from coordinator data.
+- `sensor.backyard_irrigation_state` — realtime state; enum `idle` / `running` / `paused` (shown translated), or HA `unknown` when the controller evidence is inconclusive.
+- Diagnostic category (hidden from default dashboards, listed under *Diagnostic* on the device page): firmware version, station count, programs used, program summary, controller connected, station metadata, per-station program runtimes. `binary_sensor.backyard_controller_connected` shows Connected/Disconnected; `binary_sensor.backyard_rain_sensor_active` shows Wet/Dry.
 - `binary_sensor.backyard_controller_connected` — cloud-reported connection presence; can be `on` while local telemetry fails.
 - `sensor.backyard_active_station` — realtime currently active station, named using cloud metadata when available.
 - Realtime data: active program, active station, queue remaining zones, remaining runtime.

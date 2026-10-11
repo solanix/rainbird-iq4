@@ -18,6 +18,8 @@ from .entity import RainBirdIQ4Entity
 ATTR_STATION_ID = "station_id"
 ATTR_TERMINAL = "terminal"
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -37,7 +39,6 @@ class StartStationSelect(RainBirdIQ4Entity, RestoreEntity, SelectEntity):
     """
 
     _attr_translation_key = "start_station"
-    _attr_icon = "mdi:sprinkler-variant"
 
     def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "start_station_select")

@@ -13,6 +13,8 @@ from .entity import RainBirdIQ4Entity
 
 DEFAULT_DURATION_MINUTES = 5
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -29,7 +31,6 @@ class StartDurationNumber(RainBirdIQ4Entity, RestoreNumber):
     """Minutes a manual start will run; changing it never contacts the controller."""
 
     _attr_translation_key = "start_duration"
-    _attr_icon = "mdi:timer-outline"
     _attr_mode = NumberMode.SLIDER
     _attr_native_min_value = 1
     _attr_native_max_value = 30

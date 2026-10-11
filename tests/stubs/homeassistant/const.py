@@ -23,3 +23,11 @@ class UnitOfTime(StrEnum):
 
     SECONDS = "s"
     MINUTES = "min"
+    DAYS = "d"
+
+
+class EntityCategory(StrEnum):
+    """Entity categories."""
+
+    CONFIG = "config"
+    DIAGNOSTIC = "diagnostic"

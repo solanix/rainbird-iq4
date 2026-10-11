@@ -4,8 +4,10 @@
   "codeowners": [],
   "config_flow": true,
   "integration_type": "device",
-  "iot_class": "cloud_polling",
-  "loggers": ["pyrainbird_iq4"],
+  "iot_class": "local_polling",
+  "loggers": [
+    "pyrainbird_iq4"
+  ],
   "requirements": [],
   "version": "0.1.0"
 }

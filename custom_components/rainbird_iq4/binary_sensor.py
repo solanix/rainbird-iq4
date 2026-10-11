@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import RainBirdIQ4Coordinator, RainBirdIQ4LocalSlowCoordinator
 from .entity import RainBirdIQ4Entity, RainBirdIQ4LocalEntity
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -41,6 +44,8 @@ class ControllerConnectedBinarySensor(RainBirdIQ4Entity, BinarySensorEntity):
     """Represent whether the selected controller is connected."""
 
     _attr_translation_key = "controller_connected"
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "connected")
@@ -62,7 +67,6 @@ class IrrigationEnabledBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
     """Represent the controller AUTO/enabled flag, not active watering."""
 
     _attr_translation_key = "irrigation_enabled"
-    _attr_icon = "mdi:water-check"
 
     def __init__(
         self,
@@ -87,7 +91,7 @@ class RainSensorActiveBinarySensor(RainBirdIQ4LocalEntity, BinarySensorEntity):
     """Represent the local rain-sensor input."""
 
     _attr_translation_key = "rain_sensor_active"
-    _attr_icon = "mdi:weather-pouring"
+    _attr_device_class = BinarySensorDeviceClass.MOISTURE
 
     def __init__(
         self,

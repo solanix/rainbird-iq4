@@ -9,6 +9,7 @@ class SensorDeviceClass(StrEnum):
     """Sensor device classes used by the integration."""
 
     DURATION = "duration"
+    ENUM = "enum"
 
 
 class SensorEntity(Entity):

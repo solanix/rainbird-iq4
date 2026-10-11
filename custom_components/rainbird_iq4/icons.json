@@ -1,4 +1,69 @@
 {
+  "entity": {
+    "binary_sensor": {
+      "irrigation_enabled": {
+        "default": "mdi:water-check",
+        "state": {
+          "off": "mdi:water-off"
+        }
+      }
+    },
+    "number": {
+      "start_duration": {
+        "default": "mdi:timer-outline"
+      }
+    },
+    "select": {
+      "start_station": {
+        "default": "mdi:sprinkler-variant"
+      }
+    },
+    "sensor": {
+      "active_program": {
+        "default": "mdi:calendar-play"
+      },
+      "active_station": {
+        "default": "mdi:sprinkler"
+      },
+      "firmware_version": {
+        "default": "mdi:chip"
+      },
+      "irrigation_state": {
+        "default": "mdi:sprinkler-variant",
+        "state": {
+          "idle": "mdi:sprinkler",
+          "paused": "mdi:pause-circle-outline"
+        }
+      },
+      "program": {
+        "default": "mdi:calendar-clock"
+      },
+      "program_summary": {
+        "default": "mdi:format-list-bulleted"
+      },
+      "programs_used_count": {
+        "default": "mdi:calendar"
+      },
+      "queue_zones_remaining": {
+        "default": "mdi:format-list-numbered"
+      },
+      "rain_delay": {
+        "default": "mdi:weather-rainy"
+      },
+      "remaining_runtime": {
+        "default": "mdi:timer-sand"
+      },
+      "station_count": {
+        "default": "mdi:water-pump"
+      },
+      "station_metadata": {
+        "default": "mdi:sprinkler-variant"
+      },
+      "station_program_runtime": {
+        "default": "mdi:timer-outline"
+      }
+    }
+  },
   "services": {
     "start_station": {
       "service": "mdi:sprinkler-variant"

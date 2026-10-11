@@ -6,12 +6,19 @@
         "data": {
           "username": "Username",
           "password": "Password"
+        },
+        "data_description": {
+          "username": "The email address or username you use to sign in to the Rain Bird IQ4 cloud.",
+          "password": "Your Rain Bird IQ4 cloud password."
         }
       },
       "select_controller": {
         "title": "Select controller",
         "data": {
           "controller_id": "Controller"
+        },
+        "data_description": {
+          "controller_id": "The IQ4 controller this entry will represent. Add the integration again for each additional controller."
         }
       },
       "reauth_confirm": {
@@ -19,6 +26,9 @@
         "description": "IQ4 rejected the stored password for {username}. Enter the current IQ4 cloud password.",
         "data": {
           "password": "Password"
+        },
+        "data_description": {
+          "password": "The current password for this Rain Bird IQ4 cloud account."
         }
       }
     },
@@ -42,6 +52,10 @@
         "data": {
           "local_host": "Controller IP address or hostname",
           "local_password": "Controller-local PIN"
+        },
+        "data_description": {
+          "local_host": "IP address or hostname of the controller on your network. Leave empty to turn off local polling and control.",
+          "local_password": "The PIN set on the controller itself, not the IQ4 cloud password. Leave empty to keep the current PIN."
         }
       }
     },
@@ -171,7 +185,12 @@
         "name": "Firmware version"
       },
       "irrigation_state": {
-        "name": "Irrigation state"
+        "name": "Irrigation state",
+        "state": {
+          "idle": "Idle",
+          "running": "Running",
+          "paused": "Paused"
+        }
       },
       "program_summary": {
         "name": "Program summary"

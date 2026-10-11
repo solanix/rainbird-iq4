@@ -15,6 +15,15 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - `RainBirdIQ4Data` moved to `models.py` (still importable from `coordinator`).
 - Results: library 105; integration stub suite 75; real-HA suite 66.
 
+## 2026-10-11 — Quality-scale quick wins
+
+- Diagnostic entity category for firmware version, station count, programs used, program summary, controller connected, station metadata and per-station program runtimes.
+- Device classes: controller connected → connectivity (Connected/Disconnected); rain sensor → moisture (Wet/Dry); rain delay → duration in days; irrigation state → enum with translated Idle/Running/Paused. Inconclusive controller evidence now reports Home Assistant's own `unknown` state (the raw text was already `unknown`).
+- Icons moved from code to `icons.json` (state icons for irrigation state and irrigation enabled).
+- `PARALLEL_UPDATES = 0` on every platform; help text (`data_description`) on every config, reauth and options field; manifest `iot_class` is now `local_polling`.
+- Entity IDs, names and state values are unchanged (snapshot-verified); presentation is pinned by a new snapshot.
+- Results: library 105; integration stub suite 75; real-HA suite 69.
+
 ## 2026-10-10 — Phase 2D started
 
 - Added `select` "Start station" (cloud-enabled stations only, stored by station ID, restored) and `number` "Start duration" (1–30 min, default 5, restored) entities, created only with local control configured. Neither contacts the controller.

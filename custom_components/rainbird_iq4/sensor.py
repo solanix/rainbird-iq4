@@ -7,11 +7,11 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTime
+from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyrainbird_iq4.cloud.models import Station
-from pyrainbird_iq4.local import LocalRunState
+from pyrainbird_iq4.local import LocalIrrigationState, LocalRunState
 
 from .coordinator import (
     RainBirdIQ4Coordinator,
@@ -19,6 +19,8 @@ from .coordinator import (
     RainBirdIQ4LocalSlowCoordinator,
 )
 from .entity import RainBirdIQ4Entity, RainBirdIQ4LocalEntity
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -75,7 +77,7 @@ class FirmwareVersionSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose the controller firmware version."""
 
     _attr_translation_key = "firmware_version"
-    _attr_icon = "mdi:chip"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "firmware_version")
@@ -90,7 +92,7 @@ class StationCountSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose the controller station count."""
 
     _attr_translation_key = "station_count"
-    _attr_icon = "mdi:water-pump"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "station_count")
@@ -105,7 +107,7 @@ class ProgramsUsedSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose the program count used."""
 
     _attr_translation_key = "programs_used_count"
-    _attr_icon = "mdi:calendar"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "programs_used_count")
@@ -120,7 +122,8 @@ class RainDelaySensor(RainBirdIQ4Entity, SensorEntity):
     """Expose rain delay when supplied by cloud metadata."""
 
     _attr_translation_key = "rain_delay"
-    _attr_icon = "mdi:weather-rainy"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.DAYS
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "rain_delay")
@@ -136,7 +139,8 @@ class LocalRainDelaySensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Expose locally refreshed rain delay using the existing unique ID."""
 
     _attr_translation_key = "rain_delay"
-    _attr_icon = "mdi:weather-rainy"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.DAYS
 
     def __init__(
         self,
@@ -161,7 +165,12 @@ class IrrigationStateSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Expose the conservative local irrigation state."""
 
     _attr_translation_key = "irrigation_state"
-    _attr_icon = "mdi:sprinkler-variant"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = [
+        LocalRunState.IDLE.value,
+        LocalRunState.RUNNING.value,
+        LocalRunState.PAUSED.value,
+    ]
 
     def __init__(
         self,
@@ -172,9 +181,11 @@ class IrrigationStateSensor(RainBirdIQ4LocalEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        """Return idle/running/paused/unknown from protocol evidence."""
-        state = getattr(self.coordinator, "data", None)
-        return state.state.value if state is not None else None
+        """Return idle/running/paused; inconclusive evidence is HA's unknown state."""
+        state: LocalIrrigationState | None = getattr(self.coordinator, "data", None)
+        if state is None or state.state is LocalRunState.UNKNOWN:
+            return None
+        return state.state.value
 
     @property
     def available(self) -> bool:
@@ -204,7 +215,6 @@ class ActiveStationSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Resolve the active local terminal to cloud station metadata."""
 
     _attr_translation_key = "active_station"
-    _attr_icon = "mdi:sprinkler"
 
     def __init__(
         self,
@@ -277,7 +287,6 @@ class QueueZonesRemainingSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Expose the page-zero zones-remaining count when supplied."""
 
     _attr_translation_key = "queue_zones_remaining"
-    _attr_icon = "mdi:format-list-numbered"
 
     def __init__(
         self,
@@ -305,7 +314,6 @@ class ActiveProgramSensor(RainBirdIQ4LocalEntity, SensorEntity):
     """Resolve the page-one local program number to the cloud catalog."""
 
     _attr_translation_key = "active_program"
-    _attr_icon = "mdi:calendar-play"
 
     def __init__(
         self,
@@ -379,7 +387,6 @@ class RemainingRuntimeSensor(RainBirdIQ4LocalEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_suggested_display_precision = 0
-    _attr_icon = "mdi:timer-sand"
 
     def __init__(
         self,
@@ -417,7 +424,7 @@ class ProgramSummarySensor(RainBirdIQ4Entity, SensorEntity):
     """Provide a useful summary of stations and programs."""
 
     _attr_translation_key = "program_summary"
-    _attr_icon = "mdi:format-list-bulleted"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "program_summary")
@@ -447,7 +454,8 @@ def _duration_seconds(value: str) -> int:
 class StationSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose physical station metadata and effective-program assignments."""
 
-    _attr_icon = "mdi:sprinkler-variant"
+    _attr_translation_key = "station_metadata"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, station: Station) -> None:
         super().__init__(coordinator, f"station_{station.id}")
@@ -558,9 +566,10 @@ class StationSensor(RainBirdIQ4Entity, SensorEntity):
 class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose one station runtime assignment without implying a schedule."""
 
+    _attr_translation_key = "station_program_runtime"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
-    _attr_icon = "mdi:timer-outline"
 
     def __init__(self, coordinator, station: Station, program_id: int) -> None:
         super().__init__(
@@ -693,7 +702,7 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
 class ProgramSensor(RainBirdIQ4Entity, SensorEntity):
     """Expose a controller program, scheduled or merely assigned to stations."""
 
-    _attr_icon = "mdi:calendar-clock"
+    _attr_translation_key = "program"
 
     def __init__(self, coordinator, program: dict[str, Any]) -> None:
         super().__init__(coordinator, f"program_{program['id']}")

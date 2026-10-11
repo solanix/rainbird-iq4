@@ -12,8 +12,8 @@ rules:
     status: done
     comment: tests_ha/test_config_flow.py against real Home Assistant.
   config-flow:
-    status: todo
-    comment: Works and is tested, but strings.json has no data_description for any field.
+    status: done
+    comment: All config, reauth and options fields have data_description.
   dependency-transparency:
     status: todo
     comment: pyrainbird-iq4 is unpublished; manifest requirements is empty.
@@ -56,8 +56,8 @@ rules:
     status: done
     comment: DataUpdateCoordinator logs once on failure and recovery.
   parallel-updates:
-    status: todo
-    comment: No PARALLEL_UPDATES in any platform; all entities are coordinator-based so 0 is appropriate.
+    status: done
+    comment: PARALLEL_UPDATES = 0 on every platform; all entities are coordinator-based.
   reauthentication-flow: done
   test-coverage:
     status: done
@@ -85,15 +85,11 @@ rules:
       One device per entry, but station, program and runtime entities are created only at setup;
       stations or programs added in IQ4 appear only after a reload.
   entity-category:
-    status: todo
-    comment: >-
-      Firmware version, station count, programs used, controller connected and station metadata
-      should be diagnostic.
+    status: done
+    comment: Firmware, counts, program summary, controller connected, station metadata and per-station runtimes are diagnostic.
   entity-device-class:
-    status: todo
-    comment: >-
-      Durations are set; controller connected (connectivity) and rain sensor (moisture) binary
-      sensors have none, and irrigation state could be an enum.
+    status: done
+    comment: Connectivity, moisture, duration (runtime, rain delay) and enum (irrigation state).
   entity-disabled-by-default:
     status: todo
     comment: >-
@@ -106,8 +102,8 @@ rules:
     status: todo
     comment: Action errors are translated; UpdateFailed and ConfigEntryAuthFailed messages are not.
   icon-translations:
-    status: todo
-    comment: Icons are set with _attr_icon in code instead of icons.json.
+    status: done
+    comment: icons.json; connectivity and moisture use device-class icons.
   reconfiguration-flow:
     status: todo
     comment: Local host/PIN are changeable via options; no reconfigure step for the cloud account.
