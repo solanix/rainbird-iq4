@@ -125,5 +125,7 @@ rules:
       integrations) and a browser User-Agent (HA sessions force their own, and IQ4 sits behind a
       WAF that has blocked logins).
   strict-typing:
-    status: todo
-    comment: mypy is not strict; several sensor constructors take an untyped coordinator.
+    status: done
+    comment: >-
+      custom_components is checked with disallow_untyped_defs and related flags (pyproject.toml)
+      and passes mypy --strict. pyrainbird-iq4 is strict and ships py.typed.

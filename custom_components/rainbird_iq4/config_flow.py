@@ -67,7 +67,7 @@ async def validate_input(
     return controllers, statuses
 
 
-class RainBirdIQ4ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
+class RainBirdIQ4ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Rain Bird IQ4."""
 
     VERSION = 1

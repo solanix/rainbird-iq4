@@ -155,7 +155,7 @@ class StationCountSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "station_count"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "station_count")
 
     @property
@@ -170,7 +170,7 @@ class ProgramsUsedSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "programs_used_count"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "programs_used_count")
 
     @property
@@ -186,7 +186,7 @@ class RainDelaySensor(RainBirdIQ4Entity, SensorEntity):
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.DAYS
 
-    def __init__(self, coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "rain_delay")
 
     @property
@@ -487,7 +487,7 @@ class ProgramSummarySensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "program_summary"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator) -> None:
+    def __init__(self, coordinator: RainBirdIQ4Coordinator) -> None:
         super().__init__(coordinator, "program_summary")
 
     @property
@@ -498,7 +498,7 @@ class ProgramSummarySensor(RainBirdIQ4Entity, SensorEntity):
         return f"{len(stations)} stations / {len(programs)} effective programs"
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Expose stable IDs and normalized scheduled times for future entities."""
         attributes = super().extra_state_attributes
         attributes["programs"] = self.coordinator.data.effective_programs
@@ -518,7 +518,7 @@ class StationSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_translation_key = "station_metadata"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator, station: Station) -> None:
+    def __init__(self, coordinator: RainBirdIQ4Coordinator, station: Station) -> None:
         super().__init__(coordinator, f"station_{station.id}")
         self._station_id = station.id
         self._station_name = station.name
@@ -632,7 +632,9 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
 
-    def __init__(self, coordinator, station: Station, program_id: int) -> None:
+    def __init__(
+        self, coordinator: RainBirdIQ4Coordinator, station: Station, program_id: int
+    ) -> None:
         super().__init__(
             coordinator,
             f"station_{station.id}_program_{program_id}_runtime",
@@ -765,7 +767,7 @@ class ProgramSensor(RainBirdIQ4Entity, SensorEntity):
 
     _attr_translation_key = "program"
 
-    def __init__(self, coordinator, program: dict[str, Any]) -> None:
+    def __init__(self, coordinator: RainBirdIQ4Coordinator, program: dict[str, Any]) -> None:
         super().__init__(coordinator, f"program_{program['id']}")
         self._program_id = program["id"]
         self._attr_name = program["name"]

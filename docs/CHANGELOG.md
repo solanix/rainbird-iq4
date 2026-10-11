@@ -31,6 +31,12 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Ones removed in IQ4 go unavailable while HA runs and are deleted from the entity registry at the next setup, but only with live cloud data containing at least one station: never from the saved snapshot or an empty response, so an outage cannot delete entities or their customizations. Only station, program and per-station runtime entities are ever removed. See ADR-015.
 - Results: library 105; integration stub suite 76; real-HA suite 74.
 
+## 2026-10-11 — Typing and ownership
+
+- Code owner `@solanix`.
+- Integration code passes `mypy --strict`; `pyproject.toml` now enforces untyped-def and unused-ignore checks for `custom_components`.
+- `inject-websession` recorded as exempt: the IQ4 login needs an isolated cookie jar and a browser User-Agent; all API traffic already uses HA's session.
+
 ## 2026-10-10 — Phase 2D started
 
 - Added `select` "Start station" (cloud-enabled stations only, stored by station ID, restored) and `number` "Start duration" (1–30 min, default 5, restored) entities, created only with local control configured. Neither contacts the controller.

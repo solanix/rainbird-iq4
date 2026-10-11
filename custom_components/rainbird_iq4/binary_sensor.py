@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
@@ -56,7 +58,7 @@ class ControllerConnectedBinarySensor(RainBirdIQ4Entity, BinarySensorEntity):
         return bool(self.coordinator.data.connected)
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Expose whether the last connection report is stale."""
         attributes = super().extra_state_attributes
         attributes["stale"] = self.coordinator.data.stale

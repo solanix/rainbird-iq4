@@ -69,5 +69,14 @@ files = [
     "tests",
 ]
 
+[[tool.mypy.overrides]]
+module = ["custom_components.*"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+check_untyped_defs = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["F401", "F841"]

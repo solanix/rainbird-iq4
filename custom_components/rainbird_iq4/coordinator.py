@@ -17,7 +17,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pyrainbird.exceptions import (  # type: ignore[import-untyped]
+from pyrainbird.exceptions import (
     RainbirdApiException,
     RainbirdConnectionError,
 )
