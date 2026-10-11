@@ -629,6 +629,8 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
 
     _attr_translation_key = "station_program_runtime"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    # Program entities already list every station runtime; one sensor per pair is opt-in.
+    _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
 
@@ -668,7 +670,6 @@ class StationProgramRuntimeSensor(RainBirdIQ4Entity, SensorEntity):
         )
         self._attr_name = f"{station_name} {program_name} runtime"
         self._station_name = station.name
-        self._attr_entity_registry_enabled_default = station.is_enabled is not False
         self._runtime_name_suffix = f"{program_name} runtime"
         self._terminal = station.terminal
 

@@ -90,16 +90,14 @@ rules:
     status: done
     comment: Connectivity, moisture, duration (runtime, rain delay) and enum (irrigation state).
   entity-disabled-by-default:
-    status: todo
-    comment: >-
-      Only disabled stations are disabled by default; per-station program runtime sensors are
-      noisy candidates.
+    status: done
+    comment: Per-station program runtime sensors are disabled by default (program entities already list them); metadata for IQ4-disabled stations too.
   entity-translations:
     status: done
     comment: Station and program entities use IQ4-provided names by design.
   exception-translations:
-    status: todo
-    comment: Action errors are translated; UpdateFailed and ConfigEntryAuthFailed messages are not.
+    status: done
+    comment: Action, coordinator and setup errors use translation keys.
   icon-translations:
     status: done
     comment: icons.json; connectivity and moisture use device-class icons.

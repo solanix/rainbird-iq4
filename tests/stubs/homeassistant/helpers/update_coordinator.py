@@ -5,10 +5,12 @@ from __future__ import annotations
 import logging
 from typing import Any, TypeVar
 
+from homeassistant.exceptions import HomeAssistantError
+
 T = TypeVar("T")
 
 
-class UpdateFailed(Exception):
+class UpdateFailed(HomeAssistantError):
     """Raised when an update fails."""
 
 

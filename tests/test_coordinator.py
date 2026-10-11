@@ -230,8 +230,10 @@ async def test_transient_api_failure_keeps_cached_authentication(hass, controlle
             return_value=client,
         ) as client_class,
     ):
-        with pytest.raises(UpdateFailed, match="TimeoutError"):
+        with pytest.raises(UpdateFailed) as err:
             await coordinator._async_update_data()
+        assert err.value.translation_key == "cloud_update_failed"
+        assert err.value.translation_placeholders == {"error": "RainBirdIQ4ConnectionError"}
         data = await coordinator._async_update_data()
 
     assert data.controller.id == controller.id
@@ -268,10 +270,17 @@ async def test_waf_challenge_enters_authentication_backoff(hass, controller) -> 
             return_value=100.0,
         ),
     ):
-        with pytest.raises(UpdateFailed, match="retry delayed by 300 seconds"):
+        with pytest.raises(UpdateFailed) as first:
             await coordinator._async_update_data()
-        with pytest.raises(UpdateFailed, match="temporarily backed off"):
+        with pytest.raises(UpdateFailed) as second:
             await coordinator._async_update_data()
+
+    assert first.value.translation_key == "auth_unavailable"
+    assert first.value.translation_placeholders == {
+        "error": "RainBirdIQ4WAFChallengeError",
+        "seconds": "300",
+    }
+    assert second.value.translation_key == "auth_backoff"
 
     assert authenticate.await_count == 1
 
@@ -800,7 +809,7 @@ async def test_local_connection_failures_are_sanitized(
     ):
         await coordinator._async_update_data()
 
-    output = f"{raised.value}\n{caplog.text}"
+    output = f"{raised.value} {raised.value.translation_placeholders}\n{caplog.text}"
     assert type(failure).__name__ in output
     assert "local-secret" not in output
     assert "cloud-secret" not in output

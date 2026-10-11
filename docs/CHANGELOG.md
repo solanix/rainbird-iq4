@@ -35,6 +35,9 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 
 - Code owner `@solanix`.
 - Integration code passes `mypy --strict`; `pyproject.toml` now enforces untyped-def and unused-ignore checks for `custom_components`.
+- Coordinator and setup errors (cloud, sign-in, local polls, rejected credentials) use translated messages; only the error type is included, never response text.
+- Per-station program runtime sensors are disabled by default for newly created entities (existing ones keep their state); program entities already list every station runtime.
+- New contract test pins every entity's state and attributes (all entities enabled) so refactors cannot change what dashboards see.
 - **Reconfigure** (entry ⋮ → Reconfigure) changes the IQ4 cloud username and password; the new account must still have access to the same controller. Reauth and reconfigure share one account check.
 - `inject-websession` recorded as exempt: the IQ4 login needs an isolated cookie jar and a browser User-Agent; all API traffic already uses HA's session.
 

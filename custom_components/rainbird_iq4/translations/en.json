@@ -163,6 +163,30 @@
     },
     "write_outcome_ambiguous": {
       "message": "The command may or may not have reached the controller. It was not retried; check the controller state before trying again."
+    },
+    "invalid_auth": {
+      "message": "The Rain Bird IQ4 cloud rejected the stored credentials."
+    },
+    "auth_backoff": {
+      "message": "IQ4 sign-in is paused after earlier failures; retrying in {seconds} seconds."
+    },
+    "auth_unavailable": {
+      "message": "Could not sign in to the IQ4 cloud ({error}); retrying in {seconds} seconds."
+    },
+    "controller_missing": {
+      "message": "Controller {controller_id} is no longer available in this IQ4 account."
+    },
+    "token_rejected": {
+      "message": "The IQ4 cloud rejected a newly issued access token."
+    },
+    "cloud_update_failed": {
+      "message": "Could not update IQ4 cloud data ({error})."
+    },
+    "local_update_failed": {
+      "message": "Could not read the controller's current status ({error})."
+    },
+    "local_slow_update_failed": {
+      "message": "Could not read the controller's rain and configuration status ({error})."
     }
   },
   "entity": {

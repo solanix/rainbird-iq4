@@ -162,8 +162,9 @@ class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
 
         if (remaining := self._auth_retry_at - monotonic()) > 0:
             raise UpdateFailed(
-                "IQ4 authentication is temporarily backed off; "
-                f"retry available in {int(remaining)} seconds"
+                translation_domain=DOMAIN,
+                translation_key="auth_backoff",
+                translation_placeholders={"seconds": str(int(remaining))},
             )
 
         try:
@@ -172,14 +173,20 @@ class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
                 self.entry.data[CONF_PASSWORD],
             )
         except RainBirdIQ4CredentialsError as err:
-            raise ConfigEntryAuthFailed from err
+            raise ConfigEntryAuthFailed(
+                translation_domain=DOMAIN, translation_key="invalid_auth"
+            ) from err
         except (
             RainBirdIQ4WAFChallengeError,
             RainBirdIQ4AuthenticationError,
             RainBirdIQ4ConnectionError,
         ) as err:
             delay = self._record_auth_backoff()
-            raise UpdateFailed(f"{err}; authentication retry delayed by {delay} seconds") from err
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="auth_unavailable",
+                translation_placeholders={"error": type(err).__name__, "seconds": str(delay)},
+            ) from err
 
         self._auth_failure_count = 0
         self._auth_retry_at = 0.0
@@ -194,7 +201,11 @@ class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
             None,
         )
         if controller is None:
-            raise UpdateFailed(f"Controller {self.controller_id} is no longer available")
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="controller_missing",
+                translation_placeholders={"controller_id": str(self.controller_id)},
+            )
 
         connection_statuses = await client.get_connection_statuses([self.controller_id])
         connection_status = connection_statuses[0] if connection_statuses else None
@@ -236,14 +247,18 @@ class RainBirdIQ4Coordinator(DataUpdateCoordinator[RainBirdIQ4Data]):
             return await self._async_fetch_data(client)
         except RainBirdIQ4AuthenticationError as err:
             self._client = None
-            raise UpdateFailed("IQ4 API rejected a newly refreshed access token") from err
+            raise UpdateFailed(translation_domain=DOMAIN, translation_key="token_rejected") from err
 
     async def _async_update_data(self) -> RainBirdIQ4Data:
         """Refresh cloud configuration without touching local realtime state."""
         try:
             data = await self._async_fetch_cloud()
-        except (RainBirdIQ4ConnectionError, RainBirdIQ4Error, UpdateFailed) as err:
-            raise UpdateFailed(str(err)) from err
+        except RainBirdIQ4Error as err:
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="cloud_update_failed",
+                translation_placeholders={"error": type(err).__name__},
+            ) from err
         self.cached_since = None
         await self._async_save(data)
         return data
@@ -339,7 +354,11 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
                 self.controller_id,
                 int(interval.total_seconds()),
             )
-            raise UpdateFailed(f"Local IQ4 realtime update failed: {type(err).__name__}") from err
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="local_update_failed",
+                translation_placeholders={"error": type(err).__name__},
+            ) from err
         except Exception as err:
             interval = self._record_local_failure()
             _LOGGER.debug(
@@ -353,7 +372,11 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
                 self.controller_id,
                 int(interval.total_seconds()),
             )
-            raise UpdateFailed(f"Local IQ4 realtime update failed: {type(err).__name__}") from err
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="local_update_failed",
+                translation_placeholders={"error": type(err).__name__},
+            ) from err
         if state.transport_failure:
             interval = self._record_local_failure()
             _LOGGER.debug(
@@ -645,7 +668,11 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
         except Exception as err:
             self.consecutive_failures += 1
             self._schedule_retry()
-            raise UpdateFailed(f"Local IQ4 slow update failed: {type(err).__name__}") from err
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="local_slow_update_failed",
+                translation_placeholders={"error": type(err).__name__},
+            ) from err
         # A failed command makes its entity unavailable, so retry it soon too.
         if state.failed_commands:
             self._schedule_retry()
