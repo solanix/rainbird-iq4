@@ -15,10 +15,6 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pyrainbird.exceptions import (
-    RainbirdApiException,
-    RainbirdConnectionError,
-)
 from pyrainbird_iq4.cloud.auth import authenticate
 from pyrainbird_iq4.cloud.client import RainBirdIQ4CloudClient
 from pyrainbird_iq4.exceptions import (
@@ -249,7 +245,6 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
     ) -> None:
         self.entry = entry
         self.controller_id = entry.data[CONF_CONTROLLER_ID]
-        self._session = async_get_clientsession(hass)
         self._connection = connection or RainBirdIQ4LocalConnection(hass, entry)
         self._refresh_lock = asyncio.Lock()
         self.consecutive_failures = 0
@@ -276,35 +271,13 @@ class RainBirdIQ4LocalCoordinator(DataUpdateCoordinator[LocalIrrigationState]):
         """Fetch a partial realtime snapshot without touching slow local data."""
         try:
             state = await self._connection.async_get_realtime_state()
-        except (RainbirdApiException, RainbirdConnectionError) as err:
-            interval = self._record_local_failure()
-            _LOGGER.debug(
-                "Local IQ4 poll failed for controller %s: %s",
-                self.controller_id,
-                type(err).__name__,
-            )
-            _LOGGER.debug("Local IQ4 session reset for controller %s", self.controller_id)
-            _LOGGER.debug(
-                "Local IQ4 next retry for controller %s in %s seconds",
-                self.controller_id,
-                int(interval.total_seconds()),
-            )
-            raise UpdateFailed(
-                translation_domain=DOMAIN,
-                translation_key="local_update_failed",
-                translation_placeholders={"error": type(err).__name__},
-            ) from err
         except Exception as err:
             interval = self._record_local_failure()
             _LOGGER.debug(
-                "Local IQ4 poll failed for controller %s: %s",
+                "Local IQ4 poll failed for controller %s: %s; session reset; "
+                "next retry in %s seconds",
                 self.controller_id,
                 type(err).__name__,
-            )
-            _LOGGER.debug("Local IQ4 session reset for controller %s", self.controller_id)
-            _LOGGER.debug(
-                "Local IQ4 next retry for controller %s in %s seconds",
-                self.controller_id,
                 int(interval.total_seconds()),
             )
             raise UpdateFailed(

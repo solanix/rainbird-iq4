@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
 
     from . import RainBirdIQ4RuntimeData
+    from .coordinator import RainBirdIQ4LocalCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +65,9 @@ START_STATION_SCHEMA = vol.Schema(
 STOP_IRRIGATION_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
 
 
-def _async_get_runtime(hass: HomeAssistant, device_id: str) -> RainBirdIQ4RuntimeData:
+def _async_get_runtime(
+    hass: HomeAssistant, device_id: str
+) -> tuple[RainBirdIQ4RuntimeData, RainBirdIQ4LocalCoordinator]:
     """Resolve a device to the loaded config entry that owns its controller."""
     device = dr.async_get(hass).async_get(device_id)
     entry: ConfigEntry | None = None
@@ -92,13 +95,14 @@ def _async_get_runtime(hass: HomeAssistant, device_id: str) -> RainBirdIQ4Runtim
             translation_placeholders={"title": entry.title},
         )
     runtime: RainBirdIQ4RuntimeData = entry.runtime_data
-    if runtime.local is None:
+    local = runtime.local
+    if local is None:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="local_not_configured",
             translation_placeholders={"title": entry.title},
         )
-    return runtime
+    return runtime, local
 
 
 def _raise_control_error(err: IrrigationControlError) -> NoReturn:
@@ -130,9 +134,7 @@ def _response(result: IrrigationControlResult) -> ServiceResponse:
 
 async def _async_start_station(call: ServiceCall) -> ServiceResponse:
     """Start one enabled station on the selected controller."""
-    runtime = _async_get_runtime(call.hass, call.data[ATTR_DEVICE_ID])
-    local = runtime.local
-    assert local is not None
+    runtime, local = _async_get_runtime(call.hass, call.data[ATTR_DEVICE_ID])
     cloud = runtime.cloud
     try:
         result = await local.connection.async_start_station(
@@ -153,9 +155,7 @@ async def _async_start_station(call: ServiceCall) -> ServiceResponse:
 
 async def _async_stop_irrigation(call: ServiceCall) -> ServiceResponse:
     """Stop irrigation on the selected controller without depending on cloud state."""
-    runtime = _async_get_runtime(call.hass, call.data[ATTR_DEVICE_ID])
-    local = runtime.local
-    assert local is not None
+    _, local = _async_get_runtime(call.hass, call.data[ATTR_DEVICE_ID])
     try:
         result = await local.connection.async_stop_irrigation()
     except IrrigationControlAmbiguousError as err:

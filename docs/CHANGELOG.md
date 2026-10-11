@@ -39,6 +39,8 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - Per-station program runtime sensors are disabled by default for newly created entities (existing ones keep their state); program entities already list every station runtime.
 - Refactor (no behaviour change; contract snapshot identical): the control safety boundary and local connection moved to `connection.py`; data derivations (effective programs, staleness, station program references) moved to `models.py` with one implementation instead of four copies in `sensor.py`; entities share one device-info builder and read controller details live.
 - Naming: the cloud coordinator is now `RainBirdIQ4CloudCoordinator` (matching the local ones), `UPDATE_INTERVAL` is `CLOUD_UPDATE_INTERVAL`, and the saved snapshot uses one name throughout (`saved_data.py`, `saved_data_since`).
+- Stability: one error handler for a failed realtime poll (two identical blocks before); unused HTTP session removed from the local coordinator; action handlers no longer rely on `assert`, which `python -O` strips.
+- Results after the review: library 105; integration stub suite 76; real-HA suite 80; combined coverage 96%; ruff clean; integration passes `mypy --strict`.
 - New contract test pins every entity's state and attributes (all entities enabled) so refactors cannot change what dashboards see.
 - **Reconfigure** (entry ⋮ → Reconfigure) changes the IQ4 cloud username and password; the new account must still have access to the same controller. Reauth and reconfigure share one account check.
 - `inject-websession` recorded as exempt: the IQ4 login needs an isolated cookie jar and a browser User-Agent; all API traffic already uses HA's session.
