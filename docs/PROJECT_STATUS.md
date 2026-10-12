@@ -20,7 +20,7 @@
 | Internal HA control boundary | Implemented and offline-tested (inspected) | Corrected on 2026-10-10 to match the safety policy; see discrepancies below |
 | Public HA `start_station`/`stop_irrigation` actions | **Live-validated (2026-10-10)** | Admin-only; registered in `async_setup`; 23 real-HA tests. Idle stop no-op, Station 001 start and stop each verified with exactly one write; disabled Station 008 refused |
 | Manual Program A/B/C start (`0x38`) | Deferred | Command supported, input numbering unverified |
-| Control dashboard | Validated in dev HA (no live writes through the card) | Lovelace card (`dashboard/`) bundled with the integration and loaded automatically; checked at 320–1367 px, light and dark, keyboard, admin and view-only ([VALIDATION.md](../dashboard/VALIDATION.md)). Earlier picker/duration entities and `examples/` dashboard: Station 002 start/stop verified 2026-10-10. Pending: screen-reader pass, archived screenshots, admin flow to the confirmation step, live start/stop through the card |
+| Control dashboard | Validated in dev HA (no live writes through the card) | Lovelace card (`dashboard/`) bundled with the integration and loaded automatically; checked at 320–1367 px, light and dark, keyboard, admin and view-only ([VALIDATION.md](../dashboard/VALIDATION.md)). Earlier picker/duration entities and `examples/` dashboard: Station 002 start/stop verified 2026-10-10. Admin flow checked up to the confirmation (cancelled; no call sent) and screenshots archived 2026-10-12. Pending: screen-reader pass, live start/stop through the card |
 | Published release / upstream submission | Library released; integration not yet | `pyrainbird-iq4` 0.1.0 on PyPI (2026-10-12). Both repositories public on GitHub with CI (integration: hassfest, ruff, mypy, both suites, card tests); HACS metadata prepared. No integration release tag yet; no upstream Core submission |
 
 ## Current test evidence (re-run 2026-10-12)
@@ -30,7 +30,7 @@
 | `pyrainbird-iq4` | **106 passed** | Passed | Passed | Passed (strict) |
 | `ha-rainbird-iq4` `tests/` (HA stubs) | **83 passed** | Passed | Passed | Passed |
 | `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **85 passed** (4 snapshots) | Passed | Passed | Not in mypy scope |
-| `ha-rainbird-iq4/dashboard` card (`npm test`, `npm run typecheck`) | **75 passed** | — | — | `tsc` clean |
+| `ha-rainbird-iq4/dashboard` card (`npm test`, `npm run typecheck`) | **76 passed** | — | — | `tsc` clean |
 
 The library went from 105 to 103 when the unused HTTP probe client and its tests were removed before release, then to 106 with the connect-timeout tests (2026-10-12).
 

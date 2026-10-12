@@ -25,7 +25,7 @@
 | `pyrainbird-iq4` | 106 passed | Passed | Passed | Passed (strict) |
 | `ha-rainbird-iq4` stub | 83 passed | Passed | Passed | Passed |
 | `ha-rainbird-iq4` real HA | 85 passed | Passed | Passed | — |
-| Card | 75 passed | — | — | `tsc` clean |
+| Card | 76 passed | — | — | `tsc` clean |
 
 The stub suite's `addopts` hide the summary line; use `-o addopts=` to see the count, or rely on the exit code.
 

@@ -60,7 +60,7 @@
 
 **Delivered (2026-10-11/12):** the Rain Bird IQ4 Lovelace card (`dashboard/`, `custom:rainbird-iq4-card`), bundled into `custom_components/rainbird_iq4/frontend/` and loaded on every dashboard by `card.py`, so no resource step is needed. Status, controls, zones, programs, history and diagnostics views; Start only for enabled stations with an explicit review/confirm step; verified/unconfirmed/no-op/error outcomes; view-only for non-admins. Validated in dev HA at 320–1367 px, light and dark, keyboard, admin and view-only ([VALIDATION.md](../../dashboard/VALIDATION.md)). This settles the strategy question: the card ships with the integration and `examples/` stays as the no-custom-card alternative.
 
-**Remaining:** screen-reader pass (operator); archived screenshots at the three widths and the admin flow up to the confirmation step (need a connected browser and Start not blocked by local data); live start/stop through the card (operator-authorized and supervised); translations beyond English.
+**Remaining:** screen-reader pass (operator); live start/stop through the card (operator-authorized and supervised); translations beyond English. The admin flow up to the confirmation step and archived screenshots were done 2026-10-12.
 
 Responsive desktop/mobile status panel with irrigation state, active station/program, remaining time, rain flags, enabled station selector, duration input, explicit Start and Stop. Do not expose disabled or unknown-state stations for start. Use the action response (`verified`, `no_op`) and error keys for feedback. Consider HA card/action confirmations for accidental watering. Plan accessibility, unavailable states and user-customized names.
 

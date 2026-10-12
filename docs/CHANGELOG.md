@@ -6,6 +6,7 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 
 - Station metadata sensors now show their state with the unit `programs` (e.g. `0 programs`), so a station with no scheduled program no longer reads like a disabled one. The unit comes from the entity translation; entity IDs, names and states are unchanged (snapshot-verified).
 - A station enabled in IQ4 after its entity was disabled by default now has that entity enabled again on the next live cloud refresh; Home Assistant reloads the entry to add it. Entities the user disabled, and stations disabled in IQ4 later, are left alone. Four real-HA tests.
+- Card: a Review start refused because local data had just gone stale (between the card's 5-second re-renders) now shows the reason instead of doing nothing.
 - `pyrainbird-iq4` (unreleased): local requests bound the TCP connect to 5 seconds instead of aiohttp's 30-second default. Both observed ~31 s contention hangs were `ConnectionTimeoutError` at that default; successful requests take at most ~6 s end to end. A request that never connected sent nothing, so writes are unaffected. Takes effect for users once the library is released and the manifest pin bumped.
 
 ## 2026-10-10 — Integration hardening (Phase 4 start)

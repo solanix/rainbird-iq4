@@ -107,8 +107,8 @@ Manual checks in dev HA, defects found and what remains: [VALIDATION.md](VALIDAT
 
 ## Not yet done
 
-- A screen-reader pass and archived screenshots (the responsive and theme checks themselves
-  are done; see VALIDATION.md).
+- A screen-reader pass (the responsive, theme, keyboard and admin checks are done; see
+  VALIDATION.md).
 - Live start/stop through the card: requires explicit operator authorization and physical
   observation; never automated.
 - Translations other than English.
