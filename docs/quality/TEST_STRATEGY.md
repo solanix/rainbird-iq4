@@ -14,8 +14,7 @@
 | Suite | Location | Runs against | Command |
 |---|---|---|---|
 | Library | `pyrainbird-iq4/tests` | Library only | `cd /workspaces/pyrainbird-iq4 && python3 -m pytest` |
-| Integration (stub) | `ha-rainbird-iq4/tests` | `tests/stubs/homeassistant` | `cd /workspaces/ha-rainbird-iq4 && python3 -m pytest` |
-| Integration (real HA) | `ha-rainbird-iq4/tests_ha` | HA Core checkout + its fixtures | `cd /workspaces/home-assistant-core && python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq4/tests_ha` |
+| Integration | `ha-rainbird-iq4/tests_ha` (setup level) and `tests_ha/unit` | HA Core checkout + its fixtures | `cd /workspaces/home-assistant-core && python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq4/tests_ha` |
 | Card | `ha-rainbird-iq4/dashboard/test` | Node's test runner with fixture `hass` objects | `cd ha-rainbird-iq4/dashboard && npm test && npm run typecheck` |
 
 ## Latest results (re-run 2026-10-12)
@@ -23,17 +22,14 @@
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | 106 passed | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` stub | 83 passed | Passed | Passed | Passed |
-| `ha-rainbird-iq4` real HA | 85 passed | Passed | Passed | — |
+| `ha-rainbird-iq4` (real HA) | 168 passed | Passed | Passed | Passed (integration and tests) |
 | Card | 76 passed | — | — | `tsc` clean |
-
-The stub suite's `addopts` hide the summary line; use `-o addopts=` to see the count, or rely on the exit code.
 
 ## Regression coverage
 
 **Library:** input validation (including Python bool-as-int hazard), 1/30-minute bounds, protocol delegation, upstream error types, auth/network/timeouts/NACK/busy, one-write-only, stop acknowledgement, transport serialization, connection-close behavior, no writes from construction or polling, delayed active-terminal updates, queue-only confirmation, wrong-terminal evidence rejection, bounded start verification failure, **bounded idle verification, incomplete-idle rejection, zero-attempt guard**.
 
-**Integration control boundary (stub suite):** station-ID resolution, cross-controller ID, enabled/unknown guard, duration (0, 31, bool, float), stale/incomplete/busy telemetry, fresh-read busy, rain sensor/delay active and unknown, terminal unavailable/unknown, irrigation disabled, preflight read failure, ambiguous start and stop, unconfirmed start and stop, idle stop no-op, unknown-state stop still sent, connect failure not ambiguous; plus existing entity, metadata and polling coverage.
+**Integration control boundary (`tests_ha/unit`):** station-ID resolution, cross-controller ID, enabled/unknown guard, duration (0, 31, bool, float), stale/incomplete/busy telemetry, fresh-read busy, rain sensor/delay active and unknown, terminal unavailable/unknown, irrigation disabled, preflight read failure, ambiguous start and stop, unconfirmed start and stop, idle stop no-op, unknown-state stop still sent, connect failure not ambiguous; plus existing entity, metadata and polling coverage.
 
 ## Phase 2D coverage
 

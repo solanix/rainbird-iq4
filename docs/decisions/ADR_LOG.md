@@ -60,6 +60,11 @@
 **Decision:** Immediately before a start write, inside the shared operation lock, read realtime **and** slow state fresh. Block on not-idle, incomplete realtime, irrigation not confirmed enabled, terminal not confirmed available, or rain sensor / rain delay active **or unknown**. Also require the latest cloud refresh to have succeeded. Stop has none of these requirements and is a no-op only when a fresh complete read proves idle.  
 **Reason:** Slow data can be 5 minutes old; rain and controller state can change in that window. Asymmetric policy: an unnecessary refusal to start is cheap, an unintended start is not; an unnecessary stop is cheap, a blocked stop is not. Cost: a start takes a few extra seconds.
 
+## ADR-016 — One integration suite, against real HA only
+**Status:** Accepted 2026-10-12. Supersedes the "keep the stub suite" part of ADR-013.  
+**Decision:** Move the stub-based unit tests into `tests_ha/unit/`, running against the Core checkout like the rest of `tests_ha/`, and delete `tests/stubs`. Fake config entries became `MockConfigEntry`; direct `async_setup_entry` tests mock platform forwarding.  
+**Reason:** All 83 stub tests ran unchanged against real HA except for the fake config entries, so the stubs bought speed (about 1 s vs 5 s) at the cost of a second, unverifiable model of HA that needed updating whenever the integration gained an HA import.
+
 ## ADR-015 — Add IQ4 entities live; remove stale ones only at a live setup
 **Status:** Accepted 2026-10-11.  
 **Decision:** Add station, program and runtime entities whenever a successful cloud refresh shows new ones. Remove registry entries for ones no longer in IQ4 only during setup, only with live cloud data (not the saved snapshot) that contains at least one station, and only for station, program and per-station runtime unique IDs.  

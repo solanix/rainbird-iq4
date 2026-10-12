@@ -30,16 +30,6 @@ pyrainbird-iq4 = { path = "../pyrainbird-iq4", editable = true }
 [tool.setuptools.packages.find]
 include = ["custom_components.*"]
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-pythonpath = ["tests/stubs"]
-addopts = "-q"
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-]
-
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -66,7 +56,6 @@ ignore_missing_imports = true
 explicit_package_bases = true
 files = [
     "custom_components/rainbird_iq4",
-    "tests",
 ]
 
 [[tool.mypy.overrides]]
@@ -77,6 +66,3 @@ disallow_untyped_decorators = true
 check_untyped_defs = true
 warn_unused_ignores = true
 no_implicit_optional = true
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*.py" = ["F401", "F841"]

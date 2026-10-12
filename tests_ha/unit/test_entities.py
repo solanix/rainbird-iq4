@@ -14,7 +14,6 @@ from pyrainbird_iq4.cloud.models import (
     StationRuntime,
 )
 from pyrainbird_iq4.local import (
-    LocalCurrentQueue,
     LocalIrrigationState,
     LocalQueueState,
 )

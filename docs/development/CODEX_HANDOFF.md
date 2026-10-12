@@ -21,7 +21,7 @@ Phase 2D is built: the Lovelace card in `dashboard/` ships inside the integratio
 ## Next tasks
 
 1. Add a short connect timeout to `pyrainbird-iq4`'s local transport, so a hung first connect during a contention outage no longer holds polling ~30 s; release it and bump the integration's pin.
-2. Work the Phase 4 / P1 backlog in [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md): migrate the stub suite to real HA.
+2. Work the Phase 4 backlog in [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md): soak tests, release/rollback, firmware support matrix.
 3. Remaining Phase 2D checks need the operator: a screen-reader pass, and live start/stop under supervision.
 
 ## Next developer orientation

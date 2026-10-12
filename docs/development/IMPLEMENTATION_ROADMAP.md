@@ -71,7 +71,6 @@ Investigate SIP `0x38` numeric program argument mapping from actual library enco
 ## Phase 4 — Hardening and release
 
 - Health/soak tests for cloud WAF outages, local intermittent resets, HA restart/unload, SQLite Recorder behavior, stale data, dual-controller isolation.
-- Migrate the stub-based `tests/` suite to real HA fixtures (as `tests_ha/` does) and retire the stubs.
 - Metrics and structured logs with secrets redacted; controlled release/rollback.
 - Entity registry migration and rename policy; documentation and service localization.
 - Test on additional compatible IQ4 controllers/firmware if available; avoid assuming device-class equivalence.
@@ -86,6 +85,5 @@ Quality-scale status per rule: `custom_components/rainbird_iq4/quality_scale.yam
 | P0 | Verify disk/Recorder health after restart | Earlier SQLite writes failed |
 | P0 | Preserve exact-once write semantics | Watering commands have physical effects |
 | P1 | Local connect timeout in `pyrainbird-iq4` | A hung first connect still holds polling ~30 s during contention outages |
-| P1 | Migrate stub tests to real HA | Stubs cannot prove HA behaviour |
 | P2 | Program-start protocol input mapping | Avoid watering unintended schedules |
 | P2 | Support matrix for firmware variations | Current proof covers one device/firmware |

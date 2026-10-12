@@ -1,11 +1,17 @@
-"""Test fixtures for the Rain Bird IQ4 custom integration."""
+"""Fixtures for unit tests of coordinators, connection and entities against real HA."""
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import timedelta
 
 import pytest
-from homeassistant.core import HomeAssistant
+
+
+@pytest.fixture(autouse=True)
+def mock_io() -> Generator[None]:
+    """Let these tests mock cloud and local I/O themselves."""
+    yield
 
 
 @pytest.fixture(autouse=True)
@@ -37,9 +43,3 @@ def local_grace(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "custom_components.rainbird_iq4.coordinator.LOCAL_SLOW_GRACE", const.LOCAL_SLOW_GRACE
     )
-
-
-@pytest.fixture
-def hass() -> HomeAssistant:
-    """Provide a minimal Home Assistant instance for config-flow tests."""
-    return HomeAssistant()  # type: ignore[call-arg]

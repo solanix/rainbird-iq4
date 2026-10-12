@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
-
-from homeassistant.config_entries import ConfigEntry
 
 from custom_components.rainbird_iq4 import (
     _async_update_listener,
@@ -17,34 +14,29 @@ from custom_components.rainbird_iq4.const import (
     CONF_LOCAL_PASSWORD,
     CONF_PASSWORD,
     CONF_USERNAME,
+    DOMAIN,
 )
+from tests.common import MockConfigEntry
 
 
-def _entry(*, local: bool) -> ConfigEntry:
-    entry = type(
-        "Entry",
-        (),
-        {
-            "entry_id": "backyard",
-            "data": {
-                CONF_USERNAME: "cloud-user",
-                CONF_PASSWORD: "cloud-secret",
-                CONF_CONTROLLER_ID: 200001,
-            },
-            "options": (
-                {
-                    CONF_LOCAL_HOST: "controller.local",
-                    CONF_LOCAL_PASSWORD: "local-secret",
-                }
-                if local
-                else {}
-            ),
-            "runtime_data": None,
-            "add_update_listener": lambda self, listener: listener,
-            "async_on_unload": lambda self, callback: None,
+def _entry(*, local: bool) -> MockConfigEntry:
+    return MockConfigEntry(
+        domain=DOMAIN,
+        entry_id="backyard",
+        data={
+            CONF_USERNAME: "cloud-user",
+            CONF_PASSWORD: "cloud-secret",
+            CONF_CONTROLLER_ID: 200001,
         },
-    )()
-    return cast(ConfigEntry, entry)
+        options=(
+            {
+                CONF_LOCAL_HOST: "controller.local",
+                CONF_LOCAL_PASSWORD: "local-secret",
+            }
+            if local
+            else {}
+        ),
+    )
 
 
 async def test_old_cloud_only_entry_does_not_create_local_coordinator(hass) -> None:
@@ -54,6 +46,8 @@ async def test_old_cloud_only_entry_does_not_create_local_coordinator(hass) -> N
     cloud.async_config_entry_first_refresh = AsyncMock()
 
     with (
+        # Platform setup is covered end to end in tests_ha; here only the wiring matters.
+        patch.object(hass.config_entries, "async_forward_entry_setups", AsyncMock()),
         patch(
             "custom_components.rainbird_iq4.RainBirdIQ4CloudCoordinator",
             return_value=cloud,
@@ -80,6 +74,8 @@ async def test_local_options_create_coordinator_and_reload_entry(hass) -> None:
     hass.config_entries.async_reload = AsyncMock()
 
     with (
+        # Platform setup is covered end to end in tests_ha; here only the wiring matters.
+        patch.object(hass.config_entries, "async_forward_entry_setups", AsyncMock()),
         patch(
             "custom_components.rainbird_iq4.RainBirdIQ4CloudCoordinator",
             return_value=cloud,

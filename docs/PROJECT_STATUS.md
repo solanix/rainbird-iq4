@@ -28,8 +28,7 @@
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | **106 passed** | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` `tests/` (HA stubs) | **83 passed** | Passed | Passed | Passed |
-| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **85 passed** (4 snapshots) | Passed | Passed | Not in mypy scope |
+| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **168 passed** (4 snapshots) | Passed | Passed | Passed (integration and tests) |
 | `ha-rainbird-iq4/dashboard` card (`npm test`, `npm run typecheck`) | **76 passed** | — | — | `tsc` clean |
 
 The library went from 105 to 103 when the unused HTTP probe client and its tests were removed before release, then to 106 with the connect-timeout tests (2026-10-12).
@@ -46,7 +45,7 @@ The repository inspection found the following differences between the documented
 | Stop verified with bounded reads | Single post-write read | `wait_for_idle()`: up to 5 reads, requires complete idle |
 | Start blocked by rain sensor / rain delay | No rain check | Fresh in-lock slow read; active **or unknown** rain blocks |
 | Start requires terminal locally available | Not checked | Fresh `available_terminals` must contain the terminal |
-| HA integration tests exercise HA behaviour | All 58 tests ran against hand-written `tests/stubs/homeassistant` | Stub suite kept; new `tests_ha/` runs against the real HA checkout |
+| HA integration tests exercise HA behaviour | All 58 tests ran against hand-written `tests/stubs/homeassistant` | `tests_ha/` runs against the real HA checkout; the stub suite was migrated into `tests_ha/unit/` and the stubs removed (2026-10-12) |
 | Library repo hygiene | 35 `.pyc` and 6 `egg-info` files tracked | Untracked (staged removal) and `.gitignore` added |
 
 ## Live control evidence (historical, library diagnostic)

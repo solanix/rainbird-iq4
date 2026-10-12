@@ -38,6 +38,7 @@ from custom_components.rainbird_iq4.const import (
     CONF_LOCAL_PASSWORD,
     CONF_PASSWORD,
     CONF_USERNAME,
+    DOMAIN,
 )
 from custom_components.rainbird_iq4.coordinator import (
     RainBirdIQ4CloudCoordinator,
@@ -45,6 +46,7 @@ from custom_components.rainbird_iq4.coordinator import (
     RainBirdIQ4LocalSlowCoordinator,
 )
 from custom_components.rainbird_iq4.models import RainBirdIQ4Data
+from tests.common import MockConfigEntry
 
 
 @pytest.fixture
@@ -71,18 +73,15 @@ def controller() -> Controller:
 
 async def test_coordinator_refresh(hass, controller):
     """Coordinator refresh gathers controller and program metadata."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "user",
-                CONF_PASSWORD: "pass",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "user",
+            CONF_PASSWORD: "pass",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
 
     authenticate = AsyncMock(return_value="token")
@@ -157,18 +156,15 @@ def _poll_interval_seconds(
 
 async def test_expired_api_token_reauthenticates_once(hass, controller) -> None:
     """An API authentication response replaces the cached token once."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "user",
-                CONF_PASSWORD: "pass",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "user",
+            CONF_PASSWORD: "pass",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     authenticate = AsyncMock(side_effect=["old-token", "new-token"])
     expired_client = type("Client", (), {})()
@@ -199,18 +195,15 @@ async def test_expired_api_token_reauthenticates_once(hass, controller) -> None:
 
 async def test_transient_api_failure_keeps_cached_authentication(hass, controller) -> None:
     """A transport failure retries polling later without a new login."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "user",
-                CONF_PASSWORD: "pass",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "user",
+            CONF_PASSWORD: "pass",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     authenticate = AsyncMock(return_value="token")
     client = type("Client", (), {})()
@@ -245,18 +238,15 @@ async def test_transient_api_failure_keeps_cached_authentication(hass, controlle
 
 async def test_waf_challenge_enters_authentication_backoff(hass, controller) -> None:
     """A WAF challenge does not cause authentication on every refresh."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "user",
-                CONF_PASSWORD: "pass",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "user",
+            CONF_PASSWORD: "pass",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     authenticate = AsyncMock(
         side_effect=RainBirdIQ4WAFChallengeError("IQ4 login was blocked by an AWS WAF challenge")
@@ -289,22 +279,19 @@ async def test_waf_challenge_enters_authentication_backoff(hass, controller) -> 
 
 async def test_local_failure_keeps_cloud_snapshot_available(hass, controller) -> None:
     """A local timeout does not discard freshly fetched cloud schedules."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "user",
-                CONF_PASSWORD: "pass",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "options": {
-                CONF_LOCAL_HOST: "192.0.2.10",
-                CONF_LOCAL_PASSWORD: "pin",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "user",
+            CONF_PASSWORD: "pass",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        options={
+            CONF_LOCAL_HOST: "192.0.2.10",
+            CONF_LOCAL_PASSWORD: "pin",
+        },
+        entry_id="abc",
+    )
     cloud_coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     local_coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     local_client = type(
@@ -339,22 +326,19 @@ async def test_local_failure_keeps_cloud_snapshot_available(hass, controller) ->
 
 async def test_cloud_failure_keeps_local_snapshot_available(hass, controller) -> None:
     """A cloud timeout marks metadata stale without erasing local realtime state."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "user",
-                CONF_PASSWORD: "pass",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "options": {
-                CONF_LOCAL_HOST: "192.0.2.10",
-                CONF_LOCAL_PASSWORD: "pin",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "user",
+            CONF_PASSWORD: "pass",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        options={
+            CONF_LOCAL_HOST: "192.0.2.10",
+            CONF_LOCAL_PASSWORD: "pin",
+        },
+        entry_id="abc",
+    )
     cloud_coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     local_coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     cloud = type("Client", (), {})()
@@ -393,22 +377,19 @@ async def test_cloud_failure_keeps_local_snapshot_available(hass, controller) ->
 
 async def test_local_polling_does_not_refresh_cloud_or_authenticate(hass, controller) -> None:
     """Repeated realtime polling is independent from cloud calls and login."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "user",
-                CONF_PASSWORD: "pass",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "options": {
-                CONF_LOCAL_HOST: "192.0.2.10",
-                CONF_LOCAL_PASSWORD: "pin",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "user",
+            CONF_PASSWORD: "pass",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        options={
+            CONF_LOCAL_HOST: "192.0.2.10",
+            CONF_LOCAL_PASSWORD: "pin",
+        },
+        entry_id="abc",
+    )
     cloud_coordinator = RainBirdIQ4CloudCoordinator(hass, entry)
     local_coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     authenticate = AsyncMock(return_value="token")
@@ -447,18 +428,15 @@ async def test_local_adaptive_polling_backoff_and_recovery(
     hass, controller, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Local cadence follows idle, running, bounded backoff, and recovery."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {
-                CONF_LOCAL_HOST: "controller.local",
-                CONF_LOCAL_PASSWORD: "local-secret",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={
+            CONF_LOCAL_HOST: "controller.local",
+            CONF_LOCAL_PASSWORD: "local-secret",
         },
-    )()
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     idle = _local_state()
     running = _local_state(active=(2,))
@@ -542,18 +520,15 @@ async def test_local_adaptive_polling_backoff_and_recovery(
 
 async def test_slow_partial_failure_preserves_values_and_realtime_state(hass, controller) -> None:
     """A slow field failure retains its value without affecting realtime data."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {
-                CONF_LOCAL_HOST: "controller.local",
-                CONF_LOCAL_PASSWORD: "local-secret",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={
+            CONF_LOCAL_HOST: "controller.local",
+            CONF_LOCAL_PASSWORD: "local-secret",
         },
-    )()
+        entry_id="abc",
+    )
     realtime_state = _local_state(active=(2,))
     slow_state = LocalIrrigationState(True, (), (1, 2, 3), False, 2)
     partial_slow_state = LocalIrrigationState(
@@ -565,14 +540,6 @@ async def test_slow_partial_failure_preserves_values_and_realtime_state(hass, co
         failed_commands=frozenset({"rain_delay"}),
         transport_failure=True,
     )
-    client = type(
-        "Local",
-        (),
-        {
-            "get_realtime_state": AsyncMock(return_value=realtime_state),
-            "get_slow_state": AsyncMock(side_effect=[slow_state, partial_slow_state]),
-        },
-    )()
     connection = type(
         "Connection",
         (),
@@ -601,15 +568,12 @@ async def test_slow_partial_failure_preserves_values_and_realtime_state(hass, co
 
 async def test_slow_failure_retries_with_backoff_then_recovers(hass, controller) -> None:
     """A failed slow poll retries at 30/60/120 seconds, then returns to five minutes."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
-            "entry_id": "abc",
-        },
-    )()
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+        entry_id="abc",
+    )
     connection = type(
         "Connection",
         (),
@@ -638,15 +602,12 @@ async def test_slow_failure_retries_with_backoff_then_recovers(hass, controller)
 
 async def test_slow_partial_failure_retries_soon_then_relaxes(hass, controller) -> None:
     """A single failed slow command retries within 30 seconds; a clean poll restores 5 minutes."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
-            "entry_id": "abc",
-        },
-    )()
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+        entry_id="abc",
+    )
     partial = LocalIrrigationState(
         True, (), (1, 2, 3), False, None, failed_commands=frozenset({"rain_delay"})
     )
@@ -672,18 +633,15 @@ async def test_slow_partial_failure_retries_soon_then_relaxes(hass, controller) 
 
 async def test_overlapping_local_coordinator_refreshes_are_serialized(hass, controller) -> None:
     """Only one complete local refresh may use the controller at a time."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {
-                CONF_LOCAL_HOST: "controller.local",
-                CONF_LOCAL_PASSWORD: "local-secret",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={
+            CONF_LOCAL_HOST: "controller.local",
+            CONF_LOCAL_PASSWORD: "local-secret",
         },
-    )()
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     active_calls = 0
     maximum_active_calls = 0
@@ -720,18 +678,15 @@ async def test_overlapping_local_coordinator_refreshes_are_serialized(hass, cont
 
 async def test_connection_reset_reconnects_once_on_next_poll(hass, controller) -> None:
     """A reset retains state and creates one fresh client on the next interval."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {
-                CONF_LOCAL_HOST: "controller.local",
-                CONF_LOCAL_PASSWORD: "local-secret",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={
+            CONF_LOCAL_HOST: "controller.local",
+            CONF_LOCAL_PASSWORD: "local-secret",
         },
-    )()
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
     first_state = _local_state()
     recovered_state = _local_state(active=(2,))
@@ -772,15 +727,12 @@ async def test_connection_reset_reconnects_once_on_next_poll(hass, controller) -
 
 
 def _local_entry(controller: Controller) -> Any:
-    return type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
-            "entry_id": "abc",
-        },
-    )()
+    return MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+        entry_id="abc",
+    )
 
 
 def _partial_realtime_state() -> LocalIrrigationState:
@@ -1006,22 +958,19 @@ async def test_local_connection_failures_are_sanitized(
     hass, controller, failure: Exception, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Local failures expose only their type and never configuration secrets."""
-    entry = type(
-        "Entry",
-        (),
-        {
-            "data": {
-                CONF_USERNAME: "cloud-user",
-                CONF_PASSWORD: "cloud-secret",
-                CONF_CONTROLLER_ID: controller.id,
-            },
-            "options": {
-                CONF_LOCAL_HOST: "controller.local",
-                CONF_LOCAL_PASSWORD: "local-secret",
-            },
-            "entry_id": "abc",
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_USERNAME: "cloud-user",
+            CONF_PASSWORD: "cloud-secret",
+            CONF_CONTROLLER_ID: controller.id,
         },
-    )()
+        options={
+            CONF_LOCAL_HOST: "controller.local",
+            CONF_LOCAL_PASSWORD: "local-secret",
+        },
+        entry_id="abc",
+    )
     coordinator = RainBirdIQ4LocalCoordinator(hass, entry)
 
     with (
@@ -1055,14 +1004,11 @@ def _control_cloud_data(controller: Controller, *, enabled: bool | None = True) 
 
 
 def _control_entry(controller: Controller) -> Any:
-    return type(
-        "Entry",
-        (),
-        {
-            "data": {CONF_CONTROLLER_ID: controller.id},
-            "options": {CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
-        },
-    )()
+    return MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+    )
 
 
 def _control_client(

@@ -89,22 +89,26 @@ python3 -m ruff format --check .
 python3 -m mypy src
 
 cd /workspaces/ha-rainbird-iq4
-python3 -m pytest                 # tests/ against HA stubs
 python3 -m ruff check .
-python3 -m ruff format --check .
+python3 -m ruff format --check custom_components tests_ha
 python3 -m mypy .                 # type-checks custom_components against the real HA package
 
-cd /workspaces/home-assistant-core  # tests_ha/ against real HA; must run from Core
+cd /workspaces/home-assistant-core  # all integration tests run against real HA, from Core
 python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq4/tests_ha
 ```
 
 Card: `cd dashboard && npm test && npm run typecheck` (Node 20+, runs on the host or in the container).
 
-Latest results (2026-10-12): library 106; integration stub suite 83; real-HA suite 85; card 76; all lint/format/type checks clean.
+Latest results (2026-10-12): library 106; integration 168 (85 setup-level in `tests_ha/`, 83 unit in `tests_ha/unit/`); card 76; all lint/format/type checks clean.
 
-### Why two integration suites
+### How the integration tests run
 
-`tests/` puts `tests/stubs` first on `pythonpath`, so `homeassistant` there is a hand-written stand-in. It is fast but cannot prove anything about real HA behaviour (admin authorization, service schemas, device registry, entry lifecycle). `tests_ha/` loads Core's own pytest plugin (`-p tests.conftest`) and `MockConfigEntry`, and prepends this repository's `custom_components` directory to the package path at import time so HA loads this integration ahead of Core's test custom components. No Core files are modified. When a module in `custom_components` gains a new HA import, the stub suite may need a matching minimal stub.
+`tests_ha/` loads Core's own pytest plugin (`-p tests.conftest`) and `MockConfigEntry`, and prepends this repository's `custom_components` directory to the package path at import time so HA loads this integration ahead of Core's test custom components. No Core files are modified.
+
+- `tests_ha/*.py` set up whole config entries through HA with cloud fetch and local connect mocked (the autouse `mock_io` fixture): services, authorization, registries, lifecycle, the card.
+- `tests_ha/unit/` tests coordinators, the local connection and entities directly. Its conftest turns `mock_io` off, because these tests mock the cloud client and local controller themselves, and removes the local retry delay and grace periods unless a test opts in (`local_grace`).
+
+There used to be a separate suite against hand-written HA stubs (`tests/`); it was moved here and the stubs removed on 2026-10-12 (ADR-016).
 
 ## Releasing
 
