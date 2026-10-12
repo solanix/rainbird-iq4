@@ -9,6 +9,31 @@
 - The integration is bind-mounted at `/workspaces/home-assistant-core/config/custom_components/rainbird_iq4`.
 - Home Assistant frontend: `http://localhost:8123`.
 
+## Working outside the dev container
+
+With `uv`, the sibling library is picked up through `[tool.uv.sources]`:
+
+```bash
+cd ha-rainbird-iq4
+uv sync --extra dev
+```
+
+With pip, install the library first and this project without dependency resolution, so pip
+does not look for the unpublished `pyrainbird-iq4` on PyPI:
+
+```bash
+python -m pip install -e ./pyrainbird-iq4
+python -m pip install -e ./ha-rainbird-iq4 --no-deps
+```
+
+The manifest's `requirements` stays empty until `pyrainbird-iq4` is published; then add its
+pinned release there. Home Assistant stores only the username, password, controller ID and
+local options in the config entry; no access token is persisted.
+
+The Home Assistant Core dev container bind-mounts this repository at
+`config/custom_components/rainbird_iq4` and installs the library editable. Use a separate
+configuration directory for development, never a production HAOS configuration.
+
 ## Run HA development server
 
 ```bash
