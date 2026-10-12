@@ -5,8 +5,8 @@ rules:
     status: done
     comment: Cloud metadata 5 min; local realtime 30 s idle / 10 s running; local slow 5 min.
   brands:
-    status: todo
-    comment: Custom integration; needs icon/logo (brands repo or local brand images) before release.
+    status: done
+    comment: Original icon in brand/ (Home Assistant 2026.3+ serves custom integration brand images locally).
   common-modules: done
   config-flow-test-coverage:
     status: done
