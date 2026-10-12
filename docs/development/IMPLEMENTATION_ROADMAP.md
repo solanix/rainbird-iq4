@@ -70,7 +70,7 @@ Investigate SIP `0x38` numeric program argument mapping from actual library enco
 
 ## Phase 4 — Hardening and release
 
-- Health/soak tests for cloud WAF outages, local intermittent resets, HA restart/unload, SQLite Recorder behavior, stale data, dual-controller isolation.
+- Health/soak tests for cloud WAF outages, local intermittent resets, HA restart/unload, SQLite Recorder behavior, stale data, dual-controller isolation. Offline coverage added 2026-10-12: reload/unload during a write (`test_concurrency.py`), one controller's outage or unload not affecting another (`test_isolation.py`). A long live soak is still open.
 - Metrics and structured logs with secrets redacted; controlled release/rollback.
 - Entity registry migration and rename policy; documentation and service localization.
 - Test on additional compatible IQ4 controllers/firmware if available; avoid assuming device-class equivalence.

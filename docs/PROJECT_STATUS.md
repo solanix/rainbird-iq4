@@ -28,7 +28,7 @@
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | **106 passed** | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **171 passed** (4 snapshots) | Passed | Passed | Passed (integration and tests) |
+| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **173 passed** (4 snapshots) | Passed | Passed | Passed (integration and tests) |
 | `ha-rainbird-iq4/dashboard` card (`npm test`, `npm run typecheck`) | **76 passed** | — | — | `tsc` clean |
 
 The library went from 105 to 103 when the unused HTTP probe client and its tests were removed before release, then to 106 with the connect-timeout tests (2026-10-12).
