@@ -17,7 +17,7 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 
 ## 2026-10-12 — CI, user documentation, release preparation
 
-- GitHub Actions CI for both repositories. Integration: hassfest, ruff, mypy, stub suite and real-HA suite against the pinned dev Core commit, plus the card's tests; the private library is checked out with the `PYRAINBIRD_IQ4_TOKEN` secret.
+- GitHub Actions CI for both repositories. Integration: hassfest, ruff, mypy, stub suite and real-HA suite against the pinned dev Core commit, plus the card's tests; the library is checked out from its public repository.
 - Library: Python floor corrected to 3.13 (`pyrainbird>=6.5.0` requires it), PyPI metadata, LICENSE, user README, site data removed from tests, release-triggered PyPI publish workflow (not yet used).
 - User-facing README for the integration; developer notes moved to `docs/development/DEVELOPER_SETUP.md`.
 - Brand icon: an original droplet-and-spray icon in `custom_components/rainbird_iq4/brand/` (not Rain Bird's trademarked logo), served locally by Home Assistant 2026.3+.
