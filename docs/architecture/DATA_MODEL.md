@@ -50,7 +50,7 @@ Do not negate `isLocked` on intuition. Starts require **explicitly `is_enabled i
 - HA device identifier: `("rainbird_iq4", "200001")`. Control actions use this to confirm a device belongs to the resolved config entry.
 - IQ4 cloud `name` is the default station display name; fallback if blank: `Station {terminal:03d}`. HA user-customized names should remain respected.
 - Cloud names can duplicate; never use names as identity keys.
-- Entity registry `disabled_by=integration` defaults are only applied on initial entity creation; existing enabled registry entities are not retroactively disabled. Later cloud re-enablement does not automatically remove registry disabled status.
+- Entity registry `disabled_by=integration` defaults are only applied on initial entity creation; existing enabled registry entities are not retroactively disabled. Later cloud re-enablement clears `disabled_by=integration` (not `user`) on the next live cloud refresh.
 
 ## Programs
 

@@ -170,8 +170,9 @@ starts wait until the cloud is back.
   retries.
 - The Rain Bird app or another IQ4 client can briefly occupy the controller's local
   connection, causing short gaps in live data.
-- If a station is re-enabled in IQ4 after Home Assistant disabled its entity, enable the
-  entity again manually.
+- A station disabled in IQ4 has its entity disabled when first added. Enabling the station
+  in IQ4 later enables that entity again automatically (unless you disabled it yourself);
+  disabling a station in IQ4 later leaves its entity as it is.
 - Queue and remaining-runtime data use a reverse-engineered command and may differ on other
   controller families.
 

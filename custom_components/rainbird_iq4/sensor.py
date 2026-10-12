@@ -16,6 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyrainbird_iq4.cloud.models import Station
 from pyrainbird_iq4.local import LocalIrrigationState, LocalRunState
 
+from .const import DOMAIN
 from .coordinator import (
     RainBirdIQ4CloudCoordinator,
     RainBirdIQ4LocalCoordinator,
@@ -41,12 +42,14 @@ async def async_setup_entry(
     async_add_entities(entities)
     if cloud.last_update_success and cloud.saved_data_since is None:
         _async_remove_stale_entities(hass, config_entry, cloud, added)
+        _async_enable_reenabled_stations(hass, cloud)
 
     @callback
     def _async_add_new_entities() -> None:
         """Add entities for stations, programs or assignments that appeared in IQ4."""
         if not cloud.last_update_success:
             return
+        _async_enable_reenabled_stations(hass, cloud)
         new = [
             entity
             for entity in _build_cloud_dynamic_entities(cloud)
@@ -85,6 +88,30 @@ def _async_remove_stale_entities(
         ):
             _LOGGER.info("Removing %s: no longer present in IQ4", entry.entity_id)
             registry.async_remove(entry.entity_id)
+
+
+@callback
+def _async_enable_reenabled_stations(
+    hass: HomeAssistant, cloud: RainBirdIQ4CloudCoordinator
+) -> None:
+    """Enable station entities this integration disabled once IQ4 enables the station.
+
+    A station disabled in IQ4 gets its entity disabled at creation. Only that default is
+    undone here: an entity the user disabled stays disabled, and a station disabled in IQ4
+    later is left alone, so no choice of the user's is overridden. Home Assistant reloads
+    the entry shortly after an entity is enabled, which adds it.
+    """
+    registry = er.async_get(hass)
+    for station in cloud.data.stations:
+        if station.is_enabled is not True:
+            continue
+        entity_id = registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{cloud.controller_id}_station_{station.id}"
+        )
+        entry = registry.async_get(entity_id) if entity_id is not None else None
+        if entry is not None and entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
+            _LOGGER.info("Enabling %s: %s is now enabled in IQ4", entry.entity_id, station.name)
+            registry.async_update_entity(entry.entity_id, disabled_by=None)
 
 
 def _build_cloud_dynamic_entities(coordinator: RainBirdIQ4CloudCoordinator) -> list[SensorEntity]:

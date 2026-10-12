@@ -2,6 +2,12 @@
 
 This is a **reported milestone history**, not a Git commit history. Exact dates for some intermediate milestones were not recorded; all milestones predate or occurred on 2026-10-10.
 
+## 2026-10-12 — Station program count unit, station re-enable, local connect timeout
+
+- Station metadata sensors now show their state with the unit `programs` (e.g. `0 programs`), so a station with no scheduled program no longer reads like a disabled one. The unit comes from the entity translation; entity IDs, names and states are unchanged (snapshot-verified).
+- A station enabled in IQ4 after its entity was disabled by default now has that entity enabled again on the next live cloud refresh; Home Assistant reloads the entry to add it. Entities the user disabled, and stations disabled in IQ4 later, are left alone. Four real-HA tests.
+- `pyrainbird-iq4` (unreleased): local requests bound the TCP connect to 5 seconds instead of aiohttp's 30-second default. Both observed ~31 s contention hangs were `ConnectionTimeoutError` at that default; successful requests take at most ~6 s end to end. A request that never connected sent nothing, so writes are unaffected. Takes effect for users once the library is released and the manifest pin bumped.
+
 ## 2026-10-10 — Integration hardening (Phase 4 start)
 
 - **Fixed:** IQ4 rejecting the stored cloud password raised `ConfigEntryAuthFailed`, but the config flow had no `reauth` step, so the re-authentication prompt could not complete. Added `reauth`/`reauth_confirm` (asks for the new password, checks the account still has the controller, updates the entry and reloads).

@@ -246,6 +246,9 @@
       },
       "station_count": {
         "name": "Station count"
+      },
+      "station_metadata": {
+        "unit_of_measurement": "programs"
       }
     }
   }

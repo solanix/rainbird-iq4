@@ -10,7 +10,7 @@ Reported Backyard entities include:
 - `sensor.backyard_active_station` — realtime currently active station, named using cloud metadata when available.
 - Realtime data: active program, active station, queue remaining zones, remaining runtime.
 - Slow data: irrigation enabled, rain sensor, rain delay, available terminal count/list.
-- Station metadata sensor, e.g. `sensor.backyard_station_001` — numeric state is **effective program count**, not enablement; attributes include `station_enabled`, IDs, terminal, references. The cloud **station ID** needed by `start_station` is shown here.
+- Station metadata sensor, e.g. `sensor.backyard_station_001` — numeric state is **effective program count** (unit `programs`), not enablement; attributes include `station_enabled`, IDs, terminal, references. The cloud **station ID** needed by `start_station` is shown here.
 - Program entities (`sensor.backyard_program_a`, `_b`, `_c`, …): one per program that is scheduled or assigned to a station. State is the first start time, or `Not scheduled`; attribute `effective` is true only for scheduled programs. Unavailable only when the program no longer exists in schedules or assignments.
 - Effective program count.
 - Manual-start controls (only when local control is configured):
@@ -96,4 +96,4 @@ New stations, programs and station assignments appear on the next cloud refresh 
 
 ## Registry caveat
 
-HA `_attr_entity_registry_enabled_default` is honored when an entity is first created, not automatically on later changes to cloud enablement. Newly discovered disabled stations may have `disabled_by=integration`; existing ones may remain enabled, and re-enabled cloud stations may require manual registry enablement. Never edit `.storage` by hand.
+HA `_attr_entity_registry_enabled_default` is honored when an entity is first created, not automatically on later changes to cloud enablement. Newly discovered disabled stations get `disabled_by=integration`; existing ones may remain enabled. When IQ4 later reports such a station enabled, the integration clears `disabled_by=integration` (never `user`) on the next live cloud refresh and HA reloads the entry; a station disabled in IQ4 later is not disabled in the registry. Never edit `.storage` by hand.

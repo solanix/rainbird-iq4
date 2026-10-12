@@ -3,20 +3,23 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import timedelta
 from typing import Any
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 from pyrainbird_iq4.cloud.models import RuntimeAssignment, Station, StationRuntime
 
-from tests.common import MockConfigEntry
+from tests.common import MockConfigEntry, async_fire_time_changed
 
 from .conftest import BACKYARD_ID, BACKYARD_STATION_ID, CLOUD_DATA, make_entry, setup_entry
 
 NEW_STATION_ID = 30000002
 REMOVED_STATION_ID = 30000009
+DISABLED_STATION_ID = 30000008
 NEW_PROGRAM_ID = 4000004
 
 
@@ -157,3 +160,94 @@ async def test_empty_station_list_never_removes_entities(
     await _reload(hass, entry)
 
     assert before <= _unique_ids(hass, entry)
+
+
+def _set_station_enabled(monkeypatch: pytest.MonkeyPatch, enabled: bool | None) -> None:
+    _set_cloud(
+        monkeypatch,
+        stations=[
+            replace(station, is_locked=enabled) if station.id == DISABLED_STATION_ID else station
+            for station in CLOUD_DATA[BACKYARD_ID].stations
+        ],
+    )
+
+
+async def test_station_enabled_in_iq4_enables_its_entity(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An entity disabled because its station was disabled comes back when IQ4 enables it."""
+    entry = await setup_entry(hass, make_entry(BACKYARD_ID))
+    registry = er.async_get(hass)
+    entity_id = _entity_id(hass, f"{BACKYARD_ID}_station_{DISABLED_STATION_ID}")
+    registry_entry = registry.async_get(entity_id)
+    assert registry_entry is not None
+    assert registry_entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert hass.states.get(entity_id) is None
+
+    _set_station_enabled(monkeypatch, True)
+    await _refresh_cloud(hass, entry)
+
+    registry_entry = registry.async_get(entity_id)
+    assert registry_entry is not None
+    assert registry_entry.disabled_by is None
+    # Home Assistant reloads the entry after an entity is enabled; that adds it.
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    await hass.async_block_till_done()
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state != STATE_UNAVAILABLE
+
+
+async def test_user_disabled_station_entity_stays_disabled(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Enabling a station in IQ4 never overrides the user disabling its entity."""
+    entry = await setup_entry(hass, make_entry(BACKYARD_ID))
+    registry = er.async_get(hass)
+    entity_id = _entity_id(hass, f"{BACKYARD_ID}_station_{DISABLED_STATION_ID}")
+    registry.async_update_entity(entity_id, disabled_by=er.RegistryEntryDisabler.USER)
+
+    _set_station_enabled(monkeypatch, True)
+    await _refresh_cloud(hass, entry)
+
+    registry_entry = registry.async_get(entity_id)
+    assert registry_entry is not None
+    assert registry_entry.disabled_by is er.RegistryEntryDisabler.USER
+
+
+async def test_station_disabled_in_iq4_leaves_entity_enabled(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Disabling a station in IQ4 later does not disable an entity the user may rely on."""
+    entry = await setup_entry(hass, make_entry(BACKYARD_ID))
+    registry = er.async_get(hass)
+    entity_id = _entity_id(hass, f"{BACKYARD_ID}_station_{BACKYARD_STATION_ID}")
+    stations = CLOUD_DATA[BACKYARD_ID].stations
+    _set_cloud(
+        monkeypatch,
+        stations=[
+            replace(station, is_locked=False) if station.id == BACKYARD_STATION_ID else station
+            for station in stations
+        ],
+    )
+
+    await _refresh_cloud(hass, entry)
+
+    registry_entry = registry.async_get(entity_id)
+    assert registry_entry is not None
+    assert registry_entry.disabled_by is None
+
+
+async def test_unknown_enablement_does_not_enable_entity(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only a definite enabled state re-enables; unknown leaves the entity disabled."""
+    entry = await setup_entry(hass, make_entry(BACKYARD_ID))
+    entity_id = _entity_id(hass, f"{BACKYARD_ID}_station_{DISABLED_STATION_ID}")
+
+    _set_station_enabled(monkeypatch, None)
+    await _refresh_cloud(hass, entry)
+
+    registry_entry = er.async_get(hass).async_get(entity_id)
+    assert registry_entry is not None
+    assert registry_entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
