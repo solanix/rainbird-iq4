@@ -43,6 +43,7 @@ Stop does **not** depend on cloud metadata or fresh coordinator telemetry. Insid
 ## Serialization, retry and verification
 
 - Local read and write operations share the local operation lock.
+- The lock also holds across a reload or unload: unloading the entry waits for the operation in progress (a start or stop is never cut off between write and verification), then closes the connection, so the reloaded entry's new connection cannot read or write while an old write is in flight. An operation queued behind the close is refused (`connection_closed`) and sends nothing; service calls made after unload starts are refused earlier (`entry_not_loaded`).
 - Start preflight/write/verification is atomic relative to integration local polling.
 - After only **one** acknowledged start, observe up to **five** read-only snapshots with one-second waits. An active terminal match or running queue entry matching the requested terminal confirms it.
 - After only **one** acknowledged stop, observe up to **five** read-only snapshots with one-second waits; verified only when a complete snapshot is idle (`wait_for_idle` / `confirms_idle`).

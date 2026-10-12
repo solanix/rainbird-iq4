@@ -158,6 +158,9 @@
     "rain_delay_active": {
       "message": "A rain delay is active, so starting is blocked."
     },
+    "connection_closed": {
+      "message": "The Rain Bird IQ4 entry was reloading or unloading, so nothing was sent to the controller. Try again."
+    },
     "controller_unreachable": {
       "message": "Could not connect to the controller. Nothing was sent."
     },

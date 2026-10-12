@@ -86,10 +86,25 @@ class RainBirdIQ4LocalConnection:
         self._client: RainBirdIQ4LocalClient | None = None
         self._lock = asyncio.Lock()
         self._operation_lock = asyncio.Lock()
+        self._closed = False
+
+    async def async_close(self) -> None:
+        """Wait for the local operation in progress, then refuse new ones.
+
+        A reload creates a new connection with its own lock. Closing the old one first
+        keeps every poll, start and stop serialized across the reload, so the new entry
+        never reads or writes while an old write is still being sent or verified.
+        """
+        async with self._operation_lock:
+            self._closed = True
+            await self.async_reset()
 
     async def async_get_client(self) -> RainBirdIQ4LocalClient:
         """Return the shared client, connecting once when needed."""
         async with self._lock:
+            if self._closed:
+                # Only reached by an operation queued behind async_close: nothing is sent.
+                raise IrrigationControlError("connection_closed")
             if self._client is None:
                 self._client = await RainBirdIQ4LocalClient.connect(
                     self._session,
@@ -119,6 +134,8 @@ class RainBirdIQ4LocalConnection:
         """Connect for a control operation; failure here means nothing was sent."""
         try:
             return await self.async_get_client()
+        except IrrigationControlError:
+            raise
         except Exception as err:
             raise IrrigationControlError("controller_unreachable") from err
 

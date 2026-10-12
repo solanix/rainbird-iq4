@@ -60,6 +60,11 @@
 **Decision:** Immediately before a start write, inside the shared operation lock, read realtime **and** slow state fresh. Block on not-idle, incomplete realtime, irrigation not confirmed enabled, terminal not confirmed available, or rain sensor / rain delay active **or unknown**. Also require the latest cloud refresh to have succeeded. Stop has none of these requirements and is a no-op only when a fresh complete read proves idle.  
 **Reason:** Slow data can be 5 minutes old; rain and controller state can change in that window. Asymmetric policy: an unnecessary refusal to start is cheap, an unintended start is not; an unnecessary stop is cheap, a blocked stop is not. Cost: a start takes a few extra seconds.
 
+## ADR-017 — Unload waits for the local operation in flight
+**Status:** Accepted 2026-10-12.  
+**Decision:** `async_unload_entry` closes the local connection after unloading platforms. Closing takes the operation lock, so it waits for a poll, start or stop in progress, then refuses later operations with `connection_closed`.  
+**Reason:** Each setup creates a new connection with its own lock. Without this, a reload (options change, or the automatic reload after a station is re-enabled) let the new entry poll, or accept a start, while the old entry's write was still being sent or verified, breaking the single serialized path that exactly-once writes rely on (ADR-012). A test reproduced the interleaving before the fix.
+
 ## ADR-016 — One integration suite, against real HA only
 **Status:** Accepted 2026-10-12. Supersedes the "keep the stub suite" part of ADR-013.  
 **Decision:** Move the stub-based unit tests into `tests_ha/unit/`, running against the Core checkout like the rest of `tests_ha/`, and delete `tests/stubs`. Fake config entries became `MockConfigEntry`; direct `async_setup_entry` tests mock platform forwarding.  

@@ -32,6 +32,7 @@ class RainBirdIQ4RuntimeData:
     cloud: RainBirdIQ4CloudCoordinator
     local: RainBirdIQ4LocalCoordinator | None
     local_slow: RainBirdIQ4LocalSlowCoordinator | None
+    connection: RainBirdIQ4LocalConnection | None = None
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -57,6 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await cloud_coordinator.async_use_saved_data()
         ):
             raise
+    connection = None
     local_coordinator = None
     local_slow_coordinator = None
     if cloud_coordinator.local_configured:
@@ -66,7 +68,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await local_coordinator.async_refresh()
         await local_slow_coordinator.async_refresh()
     entry.runtime_data = RainBirdIQ4RuntimeData(
-        cloud_coordinator, local_coordinator, local_slow_coordinator
+        cloud_coordinator, local_coordinator, local_slow_coordinator, connection
     )
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
@@ -83,7 +85,11 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    runtime: RainBirdIQ4RuntimeData = entry.runtime_data
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        if runtime.connection is not None:
+            # Let a start or stop in flight finish before a reload connects again.
+            await runtime.connection.async_close()
         entry.runtime_data = None
     return bool(unload_ok)

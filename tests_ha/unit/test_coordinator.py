@@ -1298,3 +1298,40 @@ async def test_stop_unconfirmed_is_not_repeated(hass, controller) -> None:
     assert client.stop_irrigation.await_count == 1
     assert result.acknowledged is True
     assert result.verified is False
+
+
+async def test_close_waits_for_operation_then_refuses_new_ones(hass, controller) -> None:
+    """Closing lets a start in flight finish; operations queued behind the close send nothing."""
+    connection = RainBirdIQ4LocalConnection(hass, _control_entry(controller))
+    client = _control_client()
+    connection._client = client
+    writing = asyncio.Event()
+    release = asyncio.Event()
+
+    async def start(*_: Any) -> None:
+        writing.set()
+        await release.wait()
+
+    client.start_station.side_effect = start
+
+    in_flight = asyncio.create_task(_start(connection, controller))
+    await asyncio.wait_for(writing.wait(), 1)
+    close = asyncio.create_task(connection.async_close())
+    await asyncio.sleep(0)
+    queued_stop = asyncio.create_task(connection.async_stop_irrigation())
+    queued_poll = asyncio.create_task(connection.async_get_realtime_state())
+    await asyncio.sleep(0)
+    assert not close.done()
+
+    release.set()
+    result = await asyncio.wait_for(in_flight, 1)
+    await asyncio.wait_for(close, 1)
+    with pytest.raises(IrrigationControlError, match="connection_closed"):
+        await asyncio.wait_for(queued_stop, 1)
+    with pytest.raises(IrrigationControlError, match="connection_closed"):
+        await asyncio.wait_for(queued_poll, 1)
+
+    assert result.verified is True
+    assert client.start_station.await_count == 1
+    client.stop_irrigation.assert_not_awaited()
+    assert connection._client is None
