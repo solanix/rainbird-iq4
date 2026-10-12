@@ -58,7 +58,9 @@
 
 **Live-tested on desktop 2026-10-10** ([log](../quality/LIVE_VALIDATION_LOG.md)).
 
-**Remaining:** mobile layout review; decide whether to ship the dashboard as a strategy or keep it as an example; optional station-name customization in the picker.
+**Delivered (2026-10-11/12):** the Rain Bird IQ4 Lovelace card (`dashboard/`, `custom:rainbird-iq4-card`), bundled into `custom_components/rainbird_iq4/frontend/` and loaded on every dashboard by `card.py`, so no resource step is needed. Status, controls, zones, programs, history and diagnostics views; Start only for enabled stations with an explicit review/confirm step; verified/unconfirmed/no-op/error outcomes; view-only for non-admins. Validated in dev HA at 320–1367 px, light and dark, keyboard, admin and view-only ([VALIDATION.md](../../dashboard/VALIDATION.md)). This settles the strategy question: the card ships with the integration and `examples/` stays as the no-custom-card alternative.
+
+**Remaining:** screen-reader pass (operator); archived screenshots at the three widths and the admin flow up to the confirmation step (need a connected browser and Start not blocked by local data); live start/stop through the card (operator-authorized and supervised); translations beyond English.
 
 Responsive desktop/mobile status panel with irrigation state, active station/program, remaining time, rain flags, enabled station selector, duration input, explicit Start and Stop. Do not expose disabled or unknown-state stations for start. Use the action response (`verified`, `no_op`) and error keys for feedback. Consider HA card/action confirmations for accidental watering. Plan accessibility, unavailable states and user-customized names.
 
@@ -83,9 +85,7 @@ Quality-scale status per rule: `custom_components/rainbird_iq4/quality_scale.yam
 |---|---|---|
 | P0 | Verify disk/Recorder health after restart | Earlier SQLite writes failed |
 | P0 | Preserve exact-once write semantics | Watering commands have physical effects |
-| P1 | Responsive dashboard with station picker | Primary end-user interaction; replaces raw station ID entry |
-| P1 | Entity label 'effective program count' | Prevents interpreting 0 as disabled |
-| P1 | Registry re-enable workflow | Cloud enablement changes do not reconcile registry automatically |
+| P1 | Local connect timeout in `pyrainbird-iq4` | A hung first connect still holds polling ~30 s during contention outages |
 | P1 | Migrate stub tests to real HA | Stubs cannot prove HA behaviour |
 | P2 | Program-start protocol input mapping | Avoid watering unintended schedules |
 | P2 | Support matrix for firmware variations | Current proof covers one device/firmware |

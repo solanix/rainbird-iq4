@@ -1,6 +1,6 @@
 # Project Status and Completion Matrix
 
-**As of:** October 10, 2026, after Phase 2C live acceptance. Repository source, tests and quality gates were **directly inspected and re-run** on this date. Live controller evidence is from operator-run diagnostics and the supervised HA action test recorded in [LIVE_VALIDATION_LOG.md](quality/LIVE_VALIDATION_LOG.md).
+**As of:** October 12, 2026 (Phase 2D card validated in dev HA; library published; repositories public). Tests and quality gates were **re-run** on this date; the capability evidence below dates from Phase 2C acceptance (2026-10-10) unless noted. Live controller evidence is from operator-run diagnostics and the supervised HA action test recorded in [LIVE_VALIDATION_LOG.md](quality/LIVE_VALIDATION_LOG.md).
 
 | Capability | Status | Evidence / caveat |
 |---|---|---|
@@ -11,7 +11,7 @@
 | Local HTTPS controller authentication | Live-validated | Encrypted JSON-RPC/SIP on TCP 443 |
 | Local realtime irrigation telemetry | Live-validated | Active terminals, running queue, remaining runtime, state |
 | Local slow telemetry | Live-validated | Global irrigation-enabled flag, physical terminals, rain sensor/delay |
-| Adaptive realtime polling | Implemented and observed | 30 sec idle; 10 sec while running; failure backoff 30/60/120 sec |
+| Adaptive realtime polling | Implemented and observed | 30 sec idle; 10 sec while running; failure backoff 30/60/120 sec. Since 2026-10-11 a failed read is retried once after 2 s, and brief outages keep the last good data (90 s realtime, 15 min slow values) |
 | Local connection-close transport | Implemented and observed | Eliminated previously recurring errors in observed baseline; not proof of universal reliability |
 | Local command-support query (`0x04`) | Live-validated | `0x38`, `0x39`, `0x40` each returned SUPPORTED |
 | Python manual station start (`0x39`) | **Live-validated** | Station 001 terminal 1; state and queue confirmed actual running |
@@ -20,18 +20,21 @@
 | Internal HA control boundary | Implemented and offline-tested (inspected) | Corrected on 2026-10-10 to match the safety policy; see discrepancies below |
 | Public HA `start_station`/`stop_irrigation` actions | **Live-validated (2026-10-10)** | Admin-only; registered in `async_setup`; 23 real-HA tests. Idle stop no-op, Station 001 start and stop each verified with exactly one write; disabled Station 008 refused |
 | Manual Program A/B/C start (`0x38`) | Deferred | Command supported, input numbering unverified |
-| Control dashboard | Live-tested (desktop) | Picker and duration entities, example script and dashboard; Station 002 start/stop via dashboard verified. Mobile review pending |
-| Published release / upstream submission | Not done | Phase 2A–2C committed locally (no remotes); no release |
+| Control dashboard | Validated in dev HA (no live writes through the card) | Lovelace card (`dashboard/`) bundled with the integration and loaded automatically; checked at 320–1367 px, light and dark, keyboard, admin and view-only ([VALIDATION.md](../dashboard/VALIDATION.md)). Earlier picker/duration entities and `examples/` dashboard: Station 002 start/stop verified 2026-10-10. Pending: screen-reader pass, archived screenshots, admin flow to the confirmation step, live start/stop through the card |
+| Published release / upstream submission | Library released; integration not yet | `pyrainbird-iq4` 0.1.0 on PyPI (2026-10-12). Both repositories public on GitHub with CI (integration: hassfest, ruff, mypy, both suites, card tests); HACS metadata prepared. No integration release tag yet; no upstream Core submission |
 
-## Current test evidence (re-run 2026-10-10)
+## Current test evidence (re-run 2026-10-12)
 
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
-| `pyrainbird-iq4` | **105 passed** | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` `tests/` (HA stubs) | **76 passed** | Passed | Passed | Passed |
-| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **80 passed** | Passed | Passed | Not in mypy scope |
+| `pyrainbird-iq4` | **106 passed** | Passed | Passed | Passed (strict) |
+| `ha-rainbird-iq4` `tests/` (HA stubs) | **83 passed** | Passed | Passed | Passed |
+| `ha-rainbird-iq4` `tests_ha/` (real HA 2026.10.0.dev0) | **85 passed** (4 snapshots) | Passed | Passed | Not in mypy scope |
+| `ha-rainbird-iq4/dashboard` card (`npm test`, `npm run typecheck`) | **75 passed** | — | — | `tsc` clean |
 
-Baseline before Phase 2C was confirmed exactly as reported: 102 library / 58 integration, all gates clean. Earlier milestones: 73/50, 82/58, 99/58, 102/58.
+The library went from 105 to 103 when the unused HTTP probe client and its tests were removed before release, then to 106 with the connect-timeout tests (2026-10-12).
+
+Baseline before Phase 2C was confirmed exactly as reported: 102 library / 58 integration, all gates clean. Earlier milestones: 73/50, 82/58, 99/58, 102/58; at Phase 2C acceptance 105 / 76 / 80.
 
 ## Discrepancies found on inspection
 
@@ -59,9 +62,9 @@ The repository inspection found the following differences between the documented
 - **Recorder:** one historical incident of `sqlite3.OperationalError: database or disk is full`, then `PendingRollbackError`; root cause not conclusively established. Check on 2026-10-10 (HA stopped): overlay 29 GB / 4.2 GB free (85%), workspace 361 GB / 32 GB free (91%), inodes 21% / 5%, DB 150 MB, WAL 4 MB, **no disk-full or rollback errors in the current log**. Still re-check after the next restart and during soak.
 - An HA irrigation-state entity transiently appeared unavailable around 00:34 UTC on Oct 10 and recovered by ~00:37:35. No reproducing integration defect found; no production fix made.
 - **Local port contention (mitigated, monitor).** The controller's local HTTPS port is occasionally unavailable for ~2–30 s, most likely while another IQ4 client (the Rain Bird app via the cloud) holds it; it was not triggered by the integration's own cloud polling. Baseline on dev HA (24 h, 2026-10-10): ~2% of local polls failed, isolated, one episode every ~10–60 min; each one made local entities unavailable. Mitigated 2026-10-11 by a single 2 s retry plus a grace period (90 s realtime, 15 min slow values; `last_successful_update` keeps aging and start re-reads everything). In the hour after, the one outage left every entity available. Remaining concerns: the first attempt in an outage can still hang ~30 s on connect (no connect timeout in `pyrainbird-iq4`), so data can briefly show stale and start is refused until the next good poll; an outage longer than 90 s still makes entities unavailable; the app-as-cause theory is unconfirmed (could be correlated by opening the app at noted times); behaviour during an active run and a longer soak are untested.
-- Disabled stations' HA registry defaults apply at entity creation only; re-enabling a station in IQ4 may require manual enabling in the HA registry.
+- Disabled stations' HA registry defaults apply at entity creation. Since 2026-10-12 a station enabled in IQ4 later has its integration-disabled entity enabled again on the next live cloud refresh (HA then reloads the entry); user-disabled entities and stations disabled in IQ4 later are left alone.
 - Some `active_terminals` requests took ~2.7–2.9 sec, queue reads ~150–200 ms. Note that a start now performs a realtime read **and** a slow read inside the lock before writing, so expect a start action to take several seconds plus up to ~5 sec of verification.
 
 ## Immediate next gate
 
-Phase 2C is accepted. In progress: Phase 2D dashboard ([roadmap](development/IMPLEMENTATION_ROADMAP.md#phase-2d--dashboardui-next)). Return HA debug logging to info/warning once no longer needed.
+Phase 2C is accepted. Phase 2D: the card is built, shipped with the integration and validated in dev HA; what is left needs a browser or the operator (see the Control dashboard row and the [roadmap](development/IMPLEMENTATION_ROADMAP.md#phase-2d--dashboardui-in-progress)). Next engineering work: a connect timeout in `pyrainbird-iq4` (the remaining local-contention risk above), then the Phase 4 / P1 backlog. Return HA debug logging to info/warning once no longer needed.

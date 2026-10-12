@@ -12,41 +12,17 @@
 - Do not commit, tag, or publish unless the user explicitly requests it.
 - Report exact files changed, compatibility assumptions, commands/test results and unknowns.
 
-## Current state (2026-10-10)
+## Current state (2026-10-12)
 
-Phase 2C is accepted: implemented, offline-tested, committed locally, and live-validated by the operator ([LIVE_VALIDATION_LOG.md](../quality/LIVE_VALIDATION_LOG.md)). Live tests remain operator-only; a developer or agent must **not** perform them.
+Phase 2C is accepted: implemented, offline-tested and live-validated by the operator ([LIVE_VALIDATION_LOG.md](../quality/LIVE_VALIDATION_LOG.md)). Live tests remain operator-only; a developer or agent must **not** perform them.
 
-## Next task: Phase 2D dashboard
+Phase 2D is built: the Lovelace card in `dashboard/` ships inside the integration and is validated in dev HA ([VALIDATION.md](../../dashboard/VALIDATION.md)). Local polling now rides out brief controller-port contention (retry once, then a grace window). `pyrainbird-iq4` 0.1.0 is on PyPI and both repositories are public with CI. Test counts and open items: [PROJECT_STATUS.md](../PROJECT_STATUS.md).
 
-```text
-Design and implement a Home Assistant dashboard for Rain Bird IQ4 control in
-/workspaces/ha-rainbird-iq4.
+## Next tasks
 
-Baseline:
-- Admin-only actions rainbird_iq4.start_station(device_id, station_id,
-  duration_minutes 1-30) and rainbird_iq4.stop_irrigation(device_id) exist,
-  return {acknowledged, verified, no_op, station_id, terminal}, and raise
-  translated errors (see docs/reference/HA_INTERFACE.md).
-- Entities: irrigation state, active station, remaining runtime, rain sensor,
-  rain delay, station metadata (station_enabled, station ID, terminal).
-- 105 library, 78 stub and 23 real-HA integration tests pass.
-
-Requirements:
-1. Examine the current Git diff and tests first; do not overwrite uncommitted
-   user changes.
-2. Show status, active station, remaining time, rain flags; responsive on
-   desktop and mobile; handle unavailable entities explicitly.
-3. Offer only stations whose station_enabled is true; never disabled or unknown.
-4. Explicit duration input (1-30) and explicit Start and Stop with confirmation
-   before Start.
-5. Surface verified / unconfirmed / no-op / error outcomes clearly; never
-   auto-retry.
-6. Respect user-customized names.
-7. Prefer standard HA cards and helpers; avoid frontend forks.
-8. No live controller contact, HA Core modifications, or commits.
-
-Report exact changes, assumptions and a manual UI review checklist.
-```
+1. Add a short connect timeout to `pyrainbird-iq4`'s local transport, so a hung first connect during a contention outage no longer holds polling ~30 s; release it and bump the integration's pin.
+2. Work the Phase 4 / P1 backlog in [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md): migrate the stub suite to real HA.
+3. Remaining Phase 2D checks need a browser or the operator: archived screenshots, the admin flow up to the confirmation step (never confirm), a screen-reader pass, and live start/stop under supervision.
 
 ## Next developer orientation
 

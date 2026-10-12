@@ -16,14 +16,18 @@
 | Library | `pyrainbird-iq4/tests` | Library only | `cd /workspaces/pyrainbird-iq4 && python3 -m pytest` |
 | Integration (stub) | `ha-rainbird-iq4/tests` | `tests/stubs/homeassistant` | `cd /workspaces/ha-rainbird-iq4 && python3 -m pytest` |
 | Integration (real HA) | `ha-rainbird-iq4/tests_ha` | HA Core checkout + its fixtures | `cd /workspaces/home-assistant-core && python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq4/tests_ha` |
+| Card | `ha-rainbird-iq4/dashboard/test` | Node's test runner with fixture `hass` objects | `cd ha-rainbird-iq4/dashboard && npm test && npm run typecheck` |
 
-## Latest results (re-run 2026-10-10)
+## Latest results (re-run 2026-10-12)
 
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
-| `pyrainbird-iq4` | 105 passed | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` stub | 76 passed | Passed | Passed | Passed |
-| `ha-rainbird-iq4` real HA | 80 passed | Passed | Passed | — |
+| `pyrainbird-iq4` | 106 passed | Passed | Passed | Passed (strict) |
+| `ha-rainbird-iq4` stub | 83 passed | Passed | Passed | Passed |
+| `ha-rainbird-iq4` real HA | 85 passed | Passed | Passed | — |
+| Card | 75 passed | — | — | `tsc` clean |
+
+The stub suite's `addopts` hide the summary line; use `-o addopts=` to see the count, or rely on the exit code.
 
 ## Regression coverage
 
@@ -33,7 +37,7 @@
 
 ## Phase 2D coverage
 
-`tests_ha/test_controls.py`: picker offers only enabled stations and selecting sends nothing; duplicate names disambiguated; restore by station ID (kept if enabled, cleared if now disabled); duration default, set and restore; no controls without local; selection drives `start_station`; `examples/script.yaml` starts the selected station, keeps the admin check, and rejects a missing selection visibly. The dashboard YAML is not machine-validated; it needs UI review.
+`tests_ha/test_controls.py`: picker offers only enabled stations and selecting sends nothing; duplicate names disambiguated; restore by station ID (kept if enabled, cleared if now disabled); duration default, set and restore; no controls without local; selection drives `start_station`; `examples/script.yaml` starts the selected station, keeps the admin check, and rejects a missing selection visibly. The `examples/` dashboard YAML is not machine-validated; it needs UI review. The Lovelace card has its own suite (T01–T18 from the dashboard spec) plus `tests_ha/test_card.py` (served and registered) and a stale-bundle check; manual checks are in `dashboard/VALIDATION.md`.
 
 ## Phase 2C traceability
 

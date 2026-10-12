@@ -98,7 +98,9 @@ cd /workspaces/home-assistant-core  # tests_ha/ against real HA; must run from C
 python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq4/tests_ha
 ```
 
-Latest results (2026-10-10): library 105; integration stub suite 76; real-HA suite 80; all lint/format/type checks clean.
+Card: `cd dashboard && npm test && npm run typecheck` (Node 20+, runs on the host or in the container).
+
+Latest results (2026-10-12): library 106; integration stub suite 83; real-HA suite 85; card 75; all lint/format/type checks clean.
 
 ### Why two integration suites
 
