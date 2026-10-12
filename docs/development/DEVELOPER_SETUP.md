@@ -104,6 +104,13 @@ Latest results (2026-10-10): library 105; integration stub suite 76; real-HA sui
 
 `tests/` puts `tests/stubs` first on `pythonpath`, so `homeassistant` there is a hand-written stand-in. It is fast but cannot prove anything about real HA behaviour (admin authorization, service schemas, device registry, entry lifecycle). `tests_ha/` loads Core's own pytest plugin (`-p tests.conftest`) and `MockConfigEntry`, and prepends this repository's `custom_components` directory to the package path at import time so HA loads this integration ahead of Core's test custom components. No Core files are modified. When a module in `custom_components` gains a new HA import, the stub suite may need a matching minimal stub.
 
+## Releasing
+
+1. Publish `pyrainbird-iq4` first if it changed (GitHub release `vX.Y.Z` in that repo runs its PyPI publish workflow), then pin it in `manifest.json` `requirements`.
+2. Bump `version` in `custom_components/rainbird_iq4/manifest.json`; if the card changed, bump it as described in `dashboard/README.md`.
+3. Update `docs/CHANGELOG.md`, commit, push, and wait for CI.
+4. Create a GitHub release tagged `v<manifest version>`; the *Release check* workflow fails a mismatched tag. HACS (once the repository is public) offers the release as an update.
+
 ## Git working tree
 
 Phase 2A–2C is committed on `master` in both repositories (no remotes configured). Build artifacts (`__pycache__`, `*.egg-info`) are ignored in both.

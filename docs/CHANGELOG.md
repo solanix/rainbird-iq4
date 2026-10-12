@@ -15,6 +15,13 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - `RainBirdIQ4Data` moved to `models.py` (still importable from `coordinator`).
 - Results: library 105; integration stub suite 75; real-HA suite 66.
 
+## 2026-10-12 — CI, user documentation, release preparation
+
+- GitHub Actions CI for both repositories. Integration: hassfest, ruff, mypy, stub suite and real-HA suite against the pinned dev Core commit, plus the card's tests; the private library is checked out with the `PYRAINBIRD_IQ4_TOKEN` secret.
+- Library: Python floor corrected to 3.13 (`pyrainbird>=6.5.0` requires it), PyPI metadata, LICENSE, user README, site data removed from tests, release-triggered PyPI publish workflow (not yet used).
+- User-facing README for the integration; developer notes moved to `docs/development/DEVELOPER_SETUP.md`.
+- HACS preparation: `hacs.json`, manifest `documentation` and `issue_tracker`, release tag check. HACS needs the repository to be public.
+
 ## 2026-10-11 — Quality-scale quick wins
 
 - Diagnostic entity category for firmware version, station count, programs used, program summary, controller connected, station metadata and per-station program runtimes.

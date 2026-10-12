@@ -1,0 +1,21 @@
+name: Release check
+
+# HACS shows GitHub releases as versions; the tag must match the manifest version.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check the release tag matches manifest.json
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/rainbird_iq4/manifest.json'))['version'])")
+          test "$TAG" = "v$version" || { echo "Tag $TAG does not match manifest version $version"; exit 1; }

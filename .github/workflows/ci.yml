@@ -67,6 +67,9 @@ jobs:
             -r home-assistant-core/requirements_test.txt \
             -r component-requirements.txt \
             -e pyrainbird-iq4
+      - name: Hassfest
+        working-directory: home-assistant-core
+        run: python -m script.hassfest --integration-path ../ha-rainbird-iq4/custom_components/rainbird_iq4
       - name: Ruff
         working-directory: ha-rainbird-iq4
         run: |
