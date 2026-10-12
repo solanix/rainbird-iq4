@@ -101,10 +101,14 @@ Start eligibility needs the `available_terminals` attribute on the *Irrigation e
 binary sensor (see INVENTORY.md). Without it, every zone shows "Terminal presence unknown"
 and Start stays disabled; Stop and all read-only views still work.
 
+## Validation
+
+Manual checks in dev HA, defects found and what remains: [VALIDATION.md](VALIDATION.md).
+
 ## Not yet done
 
-- Screenshots at 320/375, 768 and 1280+ px in light and dark themes, and a screen-reader pass,
-  on the dev instance (Phase D4 manual checklist in the spec).
+- A screen-reader pass and archived screenshots (the responsive and theme checks themselves
+  are done; see VALIDATION.md).
 - Live start/stop through the card: requires explicit operator authorization and physical
   observation; never automated.
 - Translations other than English.
