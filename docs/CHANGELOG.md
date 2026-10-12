@@ -15,6 +15,12 @@ This is a **reported milestone history**, not a Git commit history. Exact dates 
 - `RainBirdIQ4Data` moved to `models.py` (still importable from `coordinator`).
 - Results: library 105; integration stub suite 75; real-HA suite 66.
 
+## 2026-10-12 — First public release of the library; repositories public
+
+- `pyrainbird-iq4` 0.1.0 published to PyPI via the release workflow (trusted publishing); the integration's manifest pins it, so Home Assistant installs it automatically. CI now installs that pin instead of checking out the library.
+- Both repositories recreated with scrubbed history (no LAN address, controller/site/station/program IDs, site name or personal email) and made public. The library's unused HTTP probe and discovery modules were removed before release.
+- Installation docs updated for HACS and manual installs; all quality-scale rules are done or exempt.
+
 ## 2026-10-12 — CI, user documentation, release preparation
 
 - GitHub Actions CI for both repositories. Integration: hassfest, ruff, mypy, stub suite and real-HA suite against the pinned dev Core commit, plus the card's tests; the library is checked out from its public repository.

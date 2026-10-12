@@ -32,20 +32,16 @@ firmware versions may behave differently — please report what you find.
 
 ## Installation
 
-The integration depends on the [`pyrainbird-iq4`](https://github.com/solanix/pyrainbird-iq4)
-library.
+**HACS (recommended):** HACS → ⋮ → *Custom repositories* → add
+`https://github.com/solanix/rainbird-iq4` with type *Integration*. Then install
+*Rain Bird IQ4* and restart Home Assistant.
 
-**Current status:** `pyrainbird-iq4` is not yet published on PyPI, so Home Assistant cannot
-install it automatically. Install it into Home Assistant's Python environment first, then
-copy `custom_components/rainbird_iq4` from this repository into your configuration's
-`custom_components` folder and restart Home Assistant.
+**Manual:** copy `custom_components/rainbird_iq4` from this repository into your
+configuration's `custom_components` folder and restart Home Assistant.
 
-**After the library is published** (planned), installation becomes:
-
-- **HACS:** HACS → ⋮ → *Custom repositories* → add this repository as an *Integration*,
-  then install *Rain Bird IQ4* and restart Home Assistant.
-- **Manual:** copy `custom_components/rainbird_iq4` into your configuration's
-  `custom_components` folder and restart. Home Assistant installs the library itself.
+Either way, Home Assistant installs the
+[`pyrainbird-iq4`](https://pypi.org/project/pyrainbird-iq4/) library automatically.
+Requires Home Assistant 2026.10 or newer.
 
 ## Configuration
 

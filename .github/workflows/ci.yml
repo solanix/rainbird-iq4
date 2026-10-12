@@ -20,12 +20,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           path: ha-rainbird-iq4
-      # Until the manifest pins the PyPI release, test against the library's master branch.
-      - name: Check out pyrainbird-iq4
-        uses: actions/checkout@v5
-        with:
-          repository: solanix/pyrainbird-iq4
-          path: pyrainbird-iq4
       - name: Check out Home Assistant Core
         uses: actions/checkout@v5
         with:
@@ -40,14 +34,16 @@ jobs:
         run: |
           uv venv .venv
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
-          # Requirements of the core components rainbird_iq4 depends on (frontend, http, ...).
+          # Requirements of rainbird_iq4 and of the core components it depends on.
           python - > component-requirements.txt <<'PY'
           import json, pathlib
           root = pathlib.Path("home-assistant-core/homeassistant/components")
           manifest = json.loads(pathlib.Path(
               "ha-rainbird-iq4/custom_components/rainbird_iq4/manifest.json").read_text())
           # diagnostics: used by tests_ha; mqtt: Core's tests/common.py imports paho.
-          seen, reqs, stack = set(), set(), [
+          # The integration's own pinned requirements (pyrainbird-iq4 from PyPI), as users get.
+          reqs = set(manifest.get("requirements", []))
+          seen, stack = set(), [
               *manifest.get("dependencies", []), "diagnostics", "mqtt"]
           while stack:
               name = stack.pop()
@@ -67,8 +63,7 @@ jobs:
             -e home-assistant-core \
             -r home-assistant-core/requirements.txt \
             -r home-assistant-core/requirements_test.txt \
-            -r component-requirements.txt \
-            -e pyrainbird-iq4
+            -r component-requirements.txt
       - name: Hassfest
         working-directory: home-assistant-core
         run: python -m script.hassfest --integration-path ../ha-rainbird-iq4/custom_components/rainbird_iq4

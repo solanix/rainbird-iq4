@@ -26,8 +26,8 @@ python -m pip install -e ./pyrainbird-iq4
 python -m pip install -e ./ha-rainbird-iq4 --no-deps
 ```
 
-The manifest's `requirements` stays empty until `pyrainbird-iq4` is published; then add its
-pinned release there. Home Assistant stores only the username, password, controller ID and
+The manifest pins the published `pyrainbird-iq4` release; CI installs that pin. For changes
+that span both repos, install the sibling editable as above and bump the pin after releasing it. Home Assistant stores only the username, password, controller ID and
 local options in the config entry; no access token is persisted.
 
 The Home Assistant Core dev container bind-mounts this repository at

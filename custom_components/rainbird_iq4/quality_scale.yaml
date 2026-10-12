@@ -15,8 +15,8 @@ rules:
     status: done
     comment: All config, reauth and options fields have data_description.
   dependency-transparency:
-    status: todo
-    comment: pyrainbird-iq4 is unpublished; manifest requirements is empty.
+    status: done
+    comment: pyrainbird-iq4 is published on PyPI from a public repository with a release workflow; pinned in manifest.json.
   docs-actions:
     status: done
     comment: README.md

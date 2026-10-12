@@ -16,6 +16,8 @@
   "loggers": [
     "pyrainbird_iq4"
   ],
-  "requirements": [],
+  "requirements": [
+    "pyrainbird-iq4==0.1.0"
+  ],
   "version": "0.1.0"
 }
