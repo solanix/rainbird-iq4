@@ -61,9 +61,11 @@ jobs:
           PY
           # Compat editable mode installs a plain path entry mypy can follow (as Core's
           # script/setup does); the default import hook hides Core's types from mypy.
+          # requirements.txt covers Core packages hassfest imports (e.g. infrared-protocols).
           uv pip install --python .venv/bin/python \
             --config-settings editable_mode=compat \
             -e home-assistant-core \
+            -r home-assistant-core/requirements.txt \
             -r home-assistant-core/requirements_test.txt \
             -r component-requirements.txt \
             -e pyrainbird-iq4
