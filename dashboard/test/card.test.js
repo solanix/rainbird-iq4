@@ -145,6 +145,24 @@ describe("card element", () => {
     assert.equal(card._form.outcome.outcome, "unknown");
   });
 
+  test("a review refused because data aged shows the reason at once", async () => {
+    const { card, hass } = await mount({ overrides: { 1001: { localAge: 58 } } });
+    card._setTab("control");
+    card._dispatch({ type: "select_station", stationId: "502" });
+    assert.doesNotMatch(card.shadowRoot.haCard.innerHTML, /Local status is not current/);
+    // The data crosses the 60 s limit between ticks, while Review start still looks enabled.
+    const realNow = Date.now;
+    Date.now = () => realNow() + 5000;
+    try {
+      card._requestConfirm("start");
+    } finally {
+      Date.now = realNow;
+    }
+    assert.equal(card._form.confirming, null);
+    assert.match(card.shadowRoot.haCard.innerHTML, /Local status is not current/);
+    assert.deepEqual(serviceCalls(hass), []);
+  });
+
   test("submit without a confirmation sends nothing", async () => {
     const { card, hass } = await mount();
     card._dispatch({ type: "select_station", stationId: "501" });

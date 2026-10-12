@@ -1548,6 +1548,9 @@ class RainbirdIq4Card extends HTMLElement {
         : startEligibility(view, { isAdmin: this._isAdmin }).allowed &&
           startableStations(view).some((s) => s.stationId === this._form.stationId);
     if (ok) this._dispatch({ type: "request_confirm", kind });
+    // Data can go stale between render ticks while the button still looks enabled;
+    // re-render so the refusal shows its reason instead of the tap doing nothing.
+    else this._render();
   }
 
   async _submit(kind) {
