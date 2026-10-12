@@ -27,7 +27,7 @@ from custom_components.rainbird_iq4.const import (
 )
 from custom_components.rainbird_iq4.coordinator import RainBirdIQ4CloudCoordinator
 
-from .conftest import OTHER_ID, BACKYARD_ID, controller, make_entry, setup_entry
+from .conftest import BACKYARD_ID, OTHER_ID, controller, make_entry, setup_entry
 
 # Captured before the autouse mock replaces it, to exercise the real auth path.
 REAL_CLOUD_FETCH = RainBirdIQ4CloudCoordinator._async_fetch_cloud

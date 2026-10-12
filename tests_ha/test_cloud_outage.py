@@ -19,9 +19,9 @@ from custom_components.rainbird_iq4.coordinator import RainBirdIQ4CloudCoordinat
 from tests.common import MockConfigEntry
 
 from .conftest import (
-    CLOUD_DATA,
     BACKYARD_ID,
     BACKYARD_STATION_ID,
+    CLOUD_DATA,
     local_state,
     make_entry,
     setup_entry,

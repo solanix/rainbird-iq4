@@ -13,7 +13,7 @@ from pyrainbird_iq4.cloud.models import RuntimeAssignment, Station, StationRunti
 
 from tests.common import MockConfigEntry
 
-from .conftest import CLOUD_DATA, BACKYARD_ID, BACKYARD_STATION_ID, make_entry, setup_entry
+from .conftest import BACKYARD_ID, BACKYARD_STATION_ID, CLOUD_DATA, make_entry, setup_entry
 
 NEW_STATION_ID = 30000002
 REMOVED_STATION_ID = 30000009

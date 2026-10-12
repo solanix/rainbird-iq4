@@ -24,7 +24,7 @@ from syrupy.assertion import SnapshotAssertion
 
 from custom_components.rainbird_iq4.models import build_effective_programs
 
-from .conftest import CLOUD_DATA, BACKYARD_ID, BACKYARD_STATION_ID, make_entry, setup_entry
+from .conftest import BACKYARD_ID, BACKYARD_STATION_ID, CLOUD_DATA, make_entry, setup_entry
 
 
 async def test_remaining_runtime_shows_whole_seconds(hass: HomeAssistant) -> None:

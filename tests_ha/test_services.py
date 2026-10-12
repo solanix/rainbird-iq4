@@ -16,10 +16,10 @@ from custom_components.rainbird_iq4.const import DOMAIN
 from tests.common import MockConfigEntry, MockUser
 
 from .conftest import (
-    OTHER_ID,
-    OTHER_STATION_ID,
     BACKYARD_ID,
     BACKYARD_STATION_ID,
+    OTHER_ID,
+    OTHER_STATION_ID,
     local_state,
     make_entry,
     setup_entry,

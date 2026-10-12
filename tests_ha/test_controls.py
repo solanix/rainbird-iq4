@@ -21,10 +21,10 @@ from custom_components.rainbird_iq4.const import DOMAIN
 from tests.common import MockUser, mock_restore_cache, mock_restore_cache_with_extra_data
 
 from .conftest import (
-    CLOUD_DATA,
-    OTHER_ID,
     BACKYARD_ID,
     BACKYARD_STATION_ID,
+    CLOUD_DATA,
+    OTHER_ID,
     cloud_data,
     make_entry,
     setup_entry,
