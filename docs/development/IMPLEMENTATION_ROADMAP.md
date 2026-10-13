@@ -84,6 +84,5 @@ Quality-scale status per rule: `custom_components/rainbird_iq4/quality_scale.yam
 |---|---|---|
 | P0 | Verify disk/Recorder health after restart | Earlier SQLite writes failed |
 | P0 | Preserve exact-once write semantics | Watering commands have physical effects |
-| P1 | Local connect timeout in `pyrainbird-iq4` | A hung first connect still holds polling ~30 s during contention outages |
 | P2 | Program-start protocol input mapping | Avoid watering unintended schedules |
 | P2 | Support matrix for firmware variations | Current proof covers one device/firmware |

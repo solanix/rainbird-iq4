@@ -16,13 +16,12 @@
 
 Phase 2C is accepted: implemented, offline-tested and live-validated by the operator ([LIVE_VALIDATION_LOG.md](../quality/LIVE_VALIDATION_LOG.md)). Live tests remain operator-only; a developer or agent must **not** perform them.
 
-Phase 2D is built: the Lovelace card in `dashboard/` ships inside the integration and is validated in dev HA ([VALIDATION.md](../../dashboard/VALIDATION.md)). Local polling now rides out brief controller-port contention (retry once, then a grace window). `pyrainbird-iq4` 0.1.0 is on PyPI and both repositories are public with CI. Test counts and open items: [PROJECT_STATUS.md](../PROJECT_STATUS.md).
+Phase 2D is built: the Lovelace card in `dashboard/` ships inside the integration and is validated in dev HA ([VALIDATION.md](../../dashboard/VALIDATION.md)). Local polling now rides out brief controller-port contention (retry once, then a grace window). `pyrainbird-iq4` 0.1.1 is on PyPI (local connect, read and total timeouts) and both repositories are public with CI. Test counts and open items: [PROJECT_STATUS.md](../PROJECT_STATUS.md).
 
 ## Next tasks
 
-1. Add a short connect timeout to `pyrainbird-iq4`'s local transport, so a hung first connect during a contention outage no longer holds polling ~30 s; release it and bump the integration's pin.
-2. Work the Phase 4 backlog in [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md): soak tests, release/rollback, firmware support matrix.
-3. Remaining Phase 2D checks need the operator: a screen-reader pass, and live start/stop under supervision.
+1. Work the Phase 4 backlog in [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md): soak tests, release/rollback, firmware support matrix.
+2. Remaining Phase 2D checks need the operator: a screen-reader pass, and live start/stop under supervision.
 
 ## Next developer orientation
 
