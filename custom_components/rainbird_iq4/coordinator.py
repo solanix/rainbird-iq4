@@ -363,10 +363,12 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
         hass: HomeAssistant,
         entry: ConfigEntry,
         connection: RainBirdIQ4LocalConnection,
+        realtime: RainBirdIQ4LocalCoordinator | None = None,
     ) -> None:
         self.entry = entry
         self.controller_id = entry.data[CONF_CONTROLLER_ID]
         self._connection = connection
+        self._realtime = realtime
         self.last_successful_update: datetime | None = None
         self.consecutive_failures = 0
         self._retries = 0
@@ -434,7 +436,27 @@ class RainBirdIQ4LocalSlowCoordinator(DataUpdateCoordinator[LocalIrrigationState
             )
         self.consecutive_failures = len(state.failed_commands)
         self.last_successful_update = datetime.now(UTC)
+        if not state.transport_failure:
+            self._wake_realtime()
         return state
+
+    def _wake_realtime(self) -> None:
+        """Refresh realtime state now if it is backing off from an outage that has ended.
+
+        Outages often clear while realtime polling waits out a 60-120 s backoff, which
+        left its entities unavailable for minutes after the controller answered again.
+        """
+        if self._realtime is None or not self._realtime.consecutive_failures:
+            return
+        _LOGGER.debug(
+            "Local IQ4 slow poll reached controller %s; refreshing realtime state now",
+            self.controller_id,
+        )
+        self.entry.async_create_background_task(
+            self.hass,
+            self._realtime.async_request_refresh(),
+            f"{DOMAIN}_{self.controller_id}_local_recovered",
+        )
 
     def _expired(self, commands: frozenset[str]) -> frozenset[str]:
         """Return the commands with no successful read within the grace period."""

@@ -22,7 +22,7 @@
 | Suite | pytest | Ruff | Format | mypy |
 |---|---:|---|---|---|
 | `pyrainbird-iq4` | 106 passed | Passed | Passed | Passed (strict) |
-| `ha-rainbird-iq4` (real HA) | 173 passed | Passed | Passed | Passed (integration and tests) |
+| `ha-rainbird-iq4` (real HA) | 174 passed | Passed | Passed | Passed (integration and tests) |
 | Card | 76 passed | — | — | `tsc` clean |
 
 ## Regression coverage

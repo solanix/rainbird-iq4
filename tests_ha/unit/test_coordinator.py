@@ -600,6 +600,69 @@ async def test_slow_failure_retries_with_backoff_then_recovers(hass, controller)
     assert slow.last_update_success is True
 
 
+async def test_clean_slow_poll_ends_realtime_backoff(hass, controller) -> None:
+    """Realtime state refreshes as soon as a slow poll reaches the controller again."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_CONTROLLER_ID: controller.id},
+        options={CONF_LOCAL_HOST: "controller.local", CONF_LOCAL_PASSWORD: "pin"},
+        entry_id="abc",
+    )
+    clean_slow = LocalIrrigationState(True, (), (1, 2, 3), False, 0)
+    connection = type(
+        "Connection",
+        (),
+        {
+            "async_get_realtime_state": AsyncMock(
+                side_effect=[
+                    _local_state(),
+                    RainbirdConnectionError(),
+                    RainbirdConnectionError(),
+                    _local_state(),
+                ]
+            ),
+            "async_get_slow_state": AsyncMock(
+                side_effect=[
+                    LocalIrrigationState(
+                        True,
+                        (),
+                        (1, 2, 3),
+                        False,
+                        None,
+                        failed_commands=frozenset({"rain_delay"}),
+                        transport_failure=True,
+                    ),
+                    clean_slow,
+                    clean_slow,
+                ]
+            ),
+        },
+    )()
+    realtime = RainBirdIQ4LocalCoordinator(hass, entry, connection)
+    slow = RainBirdIQ4LocalSlowCoordinator(hass, entry, connection, realtime)
+    await realtime.async_refresh()
+    await realtime.async_refresh()
+    await realtime.async_refresh()
+    assert _poll_interval_seconds(realtime) == 60
+
+    # A slow poll that still could not reach the controller leaves the backoff alone.
+    await slow.async_refresh()
+    await hass.async_block_till_done()
+    assert connection.async_get_realtime_state.await_count == 3
+
+    await slow.async_refresh()
+    await hass.async_block_till_done()
+    assert connection.async_get_realtime_state.await_count == 4
+    assert realtime.consecutive_failures == 0
+    assert _poll_interval_seconds(realtime) == 30
+
+    # With realtime polling healthy, a slow poll triggers nothing extra.
+    await slow.async_refresh()
+    await hass.async_block_till_done()
+    assert connection.async_get_realtime_state.await_count == 4
+    await realtime.async_shutdown()
+
+
 async def test_slow_partial_failure_retries_soon_then_relaxes(hass, controller) -> None:
     """A single failed slow command retries within 30 seconds; a clean poll restores 5 minutes."""
     entry = MockConfigEntry(

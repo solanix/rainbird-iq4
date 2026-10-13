@@ -99,7 +99,7 @@ python3 -m pytest -c pyproject.toml -p tests.conftest /workspaces/ha-rainbird-iq
 
 Card: `cd dashboard && npm test && npm run typecheck` (Node 20+, runs on the host or in the container).
 
-Latest results (2026-10-12): library 106; integration 173 (89 setup-level in `tests_ha/`, 84 unit in `tests_ha/unit/`); card 76; all lint/format/type checks clean.
+Latest results (2026-10-13): library 107; integration 174 (89 setup-level in `tests_ha/`, 85 unit in `tests_ha/unit/`); card 76; all lint/format/type checks clean.
 
 ### How the integration tests run
 

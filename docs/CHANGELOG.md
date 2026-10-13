@@ -2,6 +2,11 @@
 
 This is a **reported milestone history**, not a Git commit history. Exact dates for some intermediate milestones were not recorded; all milestones predate or occurred on 2026-10-10.
 
+## 2026-10-13 — pyrainbird-iq4 0.1.1, faster recovery after outages
+
+- Pinned `pyrainbird-iq4` 0.1.1 (see the 0.1.1 entry below). Live on dev HA since 17:27 UTC: no 300 s hangs; silent replies now fail at 15–18 s.
+- **Fixed:** realtime entities stayed unavailable for up to 2 minutes after the controller was reachable again, because realtime polling sat out its 60–120 s backoff while the slow poll already read fine. A clean slow poll now refreshes realtime state at once. In 6.5 h of soak, 3 of the 6 unavailable periods (each 2–4 min) had a clean slow read during the wait; they would have ended 60–106 s sooner. The other 3 last until the controller answers a realtime poll, as before. One unit test (fails without the change).
+
 ## 2026-10-12 — Station program count unit, station re-enable, local connect timeout
 
 - Station metadata sensors now show their state with the unit `programs` (e.g. `0 programs`), so a station with no scheduled program no longer reads like a disabled one. The unit comes from the entity translation; entity IDs, names and states are unchanged (snapshot-verified).

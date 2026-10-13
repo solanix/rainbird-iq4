@@ -64,7 +64,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if cloud_coordinator.local_configured:
         connection = RainBirdIQ4LocalConnection(hass, entry)
         local_coordinator = RainBirdIQ4LocalCoordinator(hass, entry, connection)
-        local_slow_coordinator = RainBirdIQ4LocalSlowCoordinator(hass, entry, connection)
+        local_slow_coordinator = RainBirdIQ4LocalSlowCoordinator(
+            hass, entry, connection, local_coordinator
+        )
         await local_coordinator.async_refresh()
         await local_slow_coordinator.async_refresh()
     entry.runtime_data = RainBirdIQ4RuntimeData(

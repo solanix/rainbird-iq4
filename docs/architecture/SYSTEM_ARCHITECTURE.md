@@ -65,7 +65,7 @@ Dependencies point one way: platforms → `entity` → `coordinator` → `connec
 
 ## Polling and snapshots
 
-- Local realtime coordinator: idle ~30s; running ~10s; failure backoff 30, 60, 120s. Idle reads `active_terminals` and queue page 0; when active, additionally queue page 1.
+- Local realtime coordinator: idle ~30s; running ~10s; failure backoff 30, 60, 120s; a clean slow poll during the backoff triggers an immediate realtime refresh. Idle reads `active_terminals` and queue page 0; when active, additionally queue page 1.
 - Slow local coordinator: every 300s; `irrigation_enabled`, `available_terminals`, `rain_sensor`, `rain_delay`.
 - Cloud coordinator: approximately 300s for metadata (separate connection path).
 - Control actions do **not** trust the slow coordinator's 5-minute-old rain/terminal data; start re-reads both realtime and slow state inside the lock immediately before writing.

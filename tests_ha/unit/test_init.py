@@ -97,7 +97,7 @@ async def test_local_options_create_coordinator_and_reload_entry(hass) -> None:
         await _async_update_listener(hass, entry)
 
     local_class.assert_called_once_with(hass, entry, connection)
-    slow_class.assert_called_once_with(hass, entry, connection)
+    slow_class.assert_called_once_with(hass, entry, connection, local_class.return_value)
     local.async_refresh.assert_awaited_once_with()
     slow.async_refresh.assert_awaited_once_with()
     assert entry.runtime_data.local is local
